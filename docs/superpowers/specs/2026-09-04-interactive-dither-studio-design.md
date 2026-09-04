@@ -33,26 +33,26 @@ Accounts, cloud storage, collaboration, video input, keyframe timelines, object 
 
 ## Implementation approach
 
-Use the Toolcraft React/TypeScript application scaffold. Keep the first release in one application while enforcing package-like boundaries inside `src`:
+Use the generated Toolcraft React/TypeScript application and preserve its signed host boundary. The Toolcraft runtime owns app chrome, panels, built-in controls, history, workspace persistence, settings JSON transfer, media storage, timeline transport, finite/infinite canvas behavior, and PNG/MP4 delivery.
 
-- `scene-schema`: serializable types, defaults, validation, migration, and human-readable errors;
-- `renderer-core`: deterministic image preprocessing, dithering, particle generation, dynamic fields, Canvas drawing, resize, and lifecycle;
-- `editor`: file loading, control panels, history, presets, preview modes, pin editing, import/export, and local recovery;
-- `react-runtime`: a small component that mounts the same renderer used by the editor and manages observers, reduced motion, fallback, and accessibility.
+Product code is limited to the supported composition surface:
 
-These boundaries allow later extraction into workspace packages without changing the scene contract. Canvas 2D is the rendering backend for the MVP. WebGL is considered only after profiling proves Canvas cannot sustain the target workload.
+- `app-schema.ts` declares all product values with built-in Toolcraft controls;
+- a focused Canvas 2D renderer supplies product pixels through `canvasContent`;
+- `sceneBoundsProvider` declares the canonical product frame;
+- one deterministic `exportRenderer` draws the same scene for runtime-owned PNG and MP4 output;
+- renderer math and cached image-processing helpers remain product-owned focused modules;
+- `app-acceptance-data.ts` and `app-performance.ts` describe product observables and the renderer workload.
+
+Canvas 2D is the rendering backend for the MVP. WebGL is considered only if a separately authorized performance investigation proves it necessary.
 
 ## Interface design
 
-The app uses a full-height three-region workspace:
+The signed Toolcraft workspace provides the toolbar, controls panel, Canvas shell, timeline, history, persistence, Setup, settings transfer, media upload, and sticky export actions. Product code does not recreate those surfaces.
 
-1. A narrow left rail contains branding, project actions, preview modes, import/export, and history.
-2. A scrollable inspector contains collapsible groups for Source, Preprocess, Dither, Motion, Pointer, Pins, and Export.
-3. A large dark stage shows the live scene, fit/zoom controls, performance state, and contextual empty/error states.
+The controls panel groups editable entities as Background, Source, Tone, Dither, Motion, Pointer, Pins, Image Export, and Video Export. Toolcraft's built-in sliders provide editable numeric values, built-in colors accept six-digit HEX, `fileDrop` owns JPG/PNG import, and `collectionActions` owns pin cardinality and exact values. Direct pin placement/dragging is a complementary Canvas interaction; exact normalized position remains a panel `vector` field.
 
-Controls combine an accessible range input with an editable numeric value. Hex fields accept standard six-digit values with `#`. Normalized pin coordinates are displayed as percentages. A pin can be selected in the inspector or placed and dragged directly on the scene. Mobile preview changes the scene viewport and disables pointer interaction by default; it does not turn the editor itself into a phone layout.
-
-The empty state immediately explains supported input types and offers a drop target. Errors state what happened and the corrective action without exposing internal stack details.
+Before a source is attached, the Canvas remains neutral without fake artwork or upload CTA. Runtime-owned media feedback explains invalid formats, unavailable resources, and persistence recovery.
 
 ## Scene data contract
 
@@ -82,23 +82,23 @@ The exported runtime mounts this same pipeline. Product copy, buttons, and bubbl
 
 ## Export behavior
 
-- PNG exports the current composed frame at the selected scale.
-- MP4 renders a deterministic loop at the configured dimensions, frame rate, and duration. The UI checks browser encoding support before work begins and gives an actionable compatibility error when MP4 encoding is unavailable.
-- JSON exports the validated versioned scene configuration.
+- Toolcraft Image Export produces PNG at the selected runtime resolution.
+- Toolcraft Video Export produces MP4 from the top timeline at a fixed 30 FPS schedule and the selected duration.
+- Toolcraft Export Settings produces the versioned portable JSON configuration; Import Settings restores it.
 
-Export progress can be cancelled. A failed or cancelled export leaves the current project unchanged and releases temporary resources.
+Product code supplies only a deterministic scene-coordinate frame callback. Toolcraft owns sizing, encoding, download, progress, cancellation, typed errors, and cleanup. A failed or cancelled export leaves the current project unchanged.
 
 ## State, lifecycle, and recovery
 
-Editor settings are kept in a central scene state with bounded undo/redo history. The latest valid configuration is saved locally, while the original image remains local and may need to be selected again after reload. Replacing a source revokes stale object URLs and releases decoded resources.
+Editor settings live in the Toolcraft runtime schema and command bus. Runtime history owns undo/redo. Default local workspace persistence restores values, canvas, panels, timeline, and runtime media references; image bytes remain in Toolcraft's local IndexedDB repository and never enter settings JSON or product code.
 
 Rendering pauses when the document is hidden or the scene leaves the viewport. Device pixel ratio is capped. Reduced-motion mode shows a representative static peak frame without shimmer, breathing, pointer animation, or pulse progression.
 
 ## Quality strategy
 
-Automated tests cover schema validation/migration, seeded determinism, preprocessing utilities, all three dither algorithms, coordinate conversion, history behavior, and JSON round-trips. Component tests cover accessible labels, keyboard operations, empty/error states, and control-to-scene updates. Browser-level checks cover upload, preview, pin placement, responsive modes, and each export entry point.
+Automated tests cover seeded determinism, preprocessing utilities, all three dither algorithms, coordinate conversion, renderer invalidation, and schema-to-output mapping. Toolcraft acceptance covers built-in controls, history, persistence, settings transfer, timeline, upload, direct pin interaction, render scale, PNG, and MP4 artifacts.
 
-Visual QA compares the supplied source/reference pair at desktop and mobile preview sizes, checking subject readability, dot density, edges, midtones, crop, orange pin placement, and overall contrast. The final build must sustain a 30 fps target on the agreed test device, stop work offscreen, and avoid decoding the source on every frame.
+Visual QA compares the supplied static references at desktop and narrow viewport sizes, checking subject readability, dot density, edges, midtones, crop, orange pin placement, and overall contrast. First delivery uses Toolcraft Tier 4 functional verification through one `npm run verify:delivery`; it does not claim measured performance. The implementation must still cap playback at 30 FPS, yield during viewport interaction, and avoid decoding the source on every frame.
 
 ## Acceptance criteria
 

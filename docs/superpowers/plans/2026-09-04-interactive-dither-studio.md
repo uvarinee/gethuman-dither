@@ -1,88 +1,95 @@
-# Interactive Dither Studio Implementation Plan
+# Interactive Dither Studio Toolcraft Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+**Goal:** Build the approved local JPG/PNG dithering studio inside the signed Toolcraft shell, with interactive Canvas 2D output and runtime-owned PNG, MP4, and settings JSON delivery.
 
-**Goal:** Build a local image-to-dither editor with interactive Canvas preview and deterministic PNG, MP4, and JSON exports.
+**Architecture:** Toolcraft owns app chrome, controls, history, persistence, media, timeline, canvas modes, and exports. Product code declares a built-in-control schema and supplies one cached Canvas 2D product renderer through `canvasContent`, a canonical `sceneBoundsProvider`, and one deterministic `exportRenderer` callback shared by PNG and MP4.
 
-**Architecture:** Toolcraft generates a React/TypeScript app. Internal modules separate scene schema, cached Canvas renderer, editor UI, and reusable React runtime; animation frames reuse the static particle field.
+**Verification tier:** Tier 4 — first generated-product delivery. Run focused tests while developing, then exactly one bare `npm run verify:delivery`, followed by local browser inspection. Measured performance and `verify:perf` are not authorized.
 
-**Tech Stack:** Toolcraft, React, TypeScript, Vite, Canvas 2D, Vitest, Testing Library, WebCodecs, `mp4-muxer`, CSS.
+## Product decisions
 
-## Global Constraints
+- Canvas: `editable-output`, default 1920×1080, render scale enabled.
+- View interaction: `non-spatial`; this is a 2D image scene.
+- Timeline: enabled playback timeline because motion and MP4 export are required; seamless forward loop, default 7.2 seconds.
+- Layers: disabled; one source image and pin configuration do not require layer visibility/reorder workflow.
+- Persistence: Toolcraft default local workspace slices, including media and timeline.
+- JSON: runtime Export Settings / Import Settings; no product-owned JSON picker or serializer.
+- Export intent: image `user-requested`, SVG `not-requested`, video `user-requested`.
+- Renderer: Canvas 2D for preview and runtime-supplied export context; intentional rasterization matches the requested effect.
+- Reference inputs: no motion reference, so `referenceInputs: []`; supplied PNGs are static visual QA references only.
 
-- JPG/PNG input; exactly PNG/MP4/versioned JSON export.
-- Local-only Canvas 2D processing.
-- Floyd–Steinberg, Bayer 8×8, seeded random.
-- Deterministic JSON round-trip; normalized pin coordinates.
-- 30 fps cap, offscreen/hidden pause, reduced-motion frame.
-- Original dark technical UI; no Tooooools interface copying.
+## Control Section Inventory
 
----
+- Background — `export.includeBackground`, `appearance.background`; runtime relocates both to Setup.
+- Source — one image `fileDrop` at `source.image`; runtime owns upload, transforms, deletion, and durable media.
+- Tone — blur, grain, gamma, black point, white point.
+- Dither — algorithm, pixel size, threshold, invert, ink color.
+- Motion — shimmer switch/color/amount/speed and breathing switch/amount.
+- Pointer — enabled, radius, strength, decay.
+- Pins — one `collectionActions` target with compound position/color/core/bloom/intensity/pulse fields.
+- Image Export — required runtime format/resolution pair.
+- Video Export — required runtime format/resolution pair.
 
-### Task 1: Scaffold and shell
+Algorithm and pulse selectors are finite parameters. Motion and pointer switches are branches whose conditional dependents are absent when disabled. Pin position drag is Canvas-owned `direct-spatial-edit`; exact position is panel-owned `precise-value-entry`.
 
-**Files:** `package.json`, `vite.config.ts`, `src/main.tsx`, `src/app/App.tsx`, `src/app/App.test.tsx`, `src/styles/app.css`, `src/test/setup.ts`, `references/*`.
+## Renderer plan
 
-**Interfaces:** Produces the runnable testable three-region workspace.
+Reachable workload dimensions are source pixel area (external input, bounded by runtime image limits), output pixel area (runtime canvas/render scale), and particle density (inverse `dither.pixelSize`, schema minimum is maximum work). Static passes are source decode/sample, tone mapping, and dither/particle generation; dynamic passes are timeline motion, pointer/pin fields, and Canvas presentation. Static passes are retained per source/settings cache key. Timeline, pointer, pin movement, pan, and zoom must not decode or preprocess the image. The typed pipeline registration, workload envelope, invalidation map, `assessToolcraftRenderPlan`, derived paths, and fixture adapters must exist before renderer implementation.
 
-- [ ] Verify public `@pixel-point/toolcraft` using project-local npm cache.
-- [ ] Run `toolcraft create . --name interactive-dither-studio --yes --force`; use temporary pnpm if needed.
-- [ ] Write a failing landmark test.
-- [ ] Implement the rail, inspector, fluid stage and palette `#0a0a09/#f3f1eb/#30302c/#8c8a82/#ff5c30`.
-- [ ] Copy both supplied images into stable `references/` names.
-- [ ] Run focused test/build; commit `feat: scaffold dither studio workspace`.
+### Task 1: Repair scaffold and record product contract
 
-### Task 2: Schema, history, and algorithms
+**Files:** `src/app/app-schema.ts`, `src/app/studio-shell.ts`, `docs/toolcraft/agent-worklog.md`, this spec/plan.
 
-**Files:** `src/scene-schema/*`, `src/editor/history.ts`, `history.test.ts`, `src/renderer-core/algorithms.ts`, `algorithms.test.ts`, `image.ts`.
+- [ ] Replace the two NUL-corrupted starter product files with valid Toolcraft product sources; do not edit signed bootstrap/runtime.
+- [ ] Set worklog `Mode: product` and add a Decision Trail entry covering request, references, routes read, ownership, timeline, layers, renderer, exports, persistence, Tier 4 proof, and risks.
+- [ ] Run `npm.cmd run ai:check`.
+- [ ] Commit `chore: establish Toolcraft dither product contract`.
 
-**Interfaces:** Produces `SceneV1`, `ScenePin`, `DEFAULT_SCENE`, `parseScene`, immutable `HistoryStore`, `preprocess`, three dither functions, and local image helpers.
+### Task 2: Author schema, readiness, and renderer assessment
 
-- [ ] Test validation, migration, undo/redo, deterministic seeds, exact output, and immutability; verify red.
-- [ ] Define all source/canvas/preprocess/dither/palette/motion/pointer/pins/responsive/performance/accessibility/export fields.
-- [ ] Implement immutable parsing with readable errors and 50-entry history.
-- [ ] Implement luminance, blur, grain, gamma, remapping, Floyd–Steinberg, Bayer 8×8, and seeded random.
-- [ ] Decode only JPG/PNG up to 40 MB; implement crop sampling/disposal.
-- [ ] Run suites; commit `feat: add deterministic scene pipeline`.
+**Files:** `src/app/app-schema.ts`, `src/app/app-acceptance-data.ts`, `src/app/app-performance.ts`, focused schema/performance tests.
 
-### Task 3: Shared renderer and editor
+- [ ] Write failing product tests for section inventory, defaults, applicability, export intent, timeline intent, persistence slices, interaction ownership, and performance structure.
+- [ ] Declare the built-in controls listed above, all `defaultValue`, `applicability`, `performanceRole`, semantic grouping, and finite-selector roles.
+- [ ] Declare product readiness, `animationIntent`, `referenceInputs: []`, acceptance rows, render-scale coverage, and persistence reload.
+- [ ] Declare Canvas 2D renderer technique, workload envelope, pipeline passes, invalidation, adapters, derived paths, and run render-plan assessment until structurally valid.
+- [ ] Run focused schema/performance tests and `npm.cmd run ai:check`.
+- [ ] Commit `feat: define dither studio schema and renderer plan`.
 
-**Files:** `src/renderer-core/{fields,engine}.ts`, tests, `src/react-runtime/DitherScene.tsx`, tests, `src/editor/{controls,Inspector,ProjectRail,Stage}.tsx`, `src/app/*`, `src/styles/app.css`.
+### Task 3: Implement deterministic dither renderer
 
-**Interfaces:** Produces `createDitherEngine` with lifecycle methods, reusable `DitherScene`, and complete editing flow.
+**Files:** `src/dither/dither-algorithms.ts`, `dither-algorithms.test.ts`, `dither-renderer.ts`, `DitherCanvas.tsx`, `DitherCanvas.module.css`.
 
-- [ ] Test pointer, breathing, double pulses, lifecycle, upload errors, controls, history, recovery, previews, pin editing; verify red.
-- [ ] Implement cached static stages and dynamic fields at 30 fps.
-- [ ] Implement resize/intersection/visibility/reduced-motion/fallback/pointer lifecycle.
-- [ ] Build accessible controls and Source/Preprocess/Dither/Motion/Pointer/Pins/Export groups.
-- [ ] Implement drop/picker/replace, cleanup, localStorage, history, reset, desktop/mobile preview.
-- [ ] Implement normalized pin add/select/drag/delete, percentages, keyboard movement.
-- [ ] Finish responsive layout, run tests/build; commit `feat: build interactive dither editor`.
+- [ ] Write failing exact-output tests for seeded grain/random, Floyd–Steinberg, Bayer 8×8, preprocessing bounds, and input immutability.
+- [ ] Implement source sampling as cover/crop, luminance, blur, grain, gamma, black/white mapping, and three dither modes.
+- [ ] Implement retained cache stages and dynamic shimmer, breathing, pointer, and double-pulse pin fields using Toolcraft timeline time.
+- [ ] Consume `useToolcraftProductSceneFrame`; preserve CSS × DPR × renderScale backing in interaction, playback, and steady states.
+- [ ] Yield/coalesce nonessential playback work during Toolcraft viewport interaction and dispose image/RAF resources.
+- [ ] Run focused algorithm/renderer tests.
+- [ ] Commit `feat: render interactive dither scenes`.
 
-### Task 4: Exports
+### Task 4: Integrate canvas interaction and runtime exports
 
-**Files:** `src/editor/exports.ts`, tests, relevant editor components, `package.json`.
+**Files:** `src/app/app-composition.tsx`, `src/dither/DitherCanvas.tsx`, focused interaction/export tests.
 
-**Interfaces:** Produces `exportSceneJson`, `exportPng`, `exportMp4`, `downloadBlob`.
+- [ ] Add textless Canvas pin handles that update the runtime pin target and reference the typed Canvas interaction owner.
+- [ ] Keep panel Vector editing as precise entry, not a duplicate drag interaction.
+- [ ] Provide stable finite/infinite product bounds through `sceneBoundsProvider`.
+- [ ] Provide one deterministic `exportRenderer.renderFrame`; do not allocate canvases, encode, download, or import an encoder.
+- [ ] Use the same evaluated timeline state for live output and runtime PNG/MP4 frames.
+- [ ] Run focused interaction/export tests and build.
+- [ ] Commit `feat: integrate dither canvas and exports`.
 
-- [ ] Test JSON, PNG, MP4 support/timestamps/progress/cancel/cleanup; verify red.
-- [ ] Validate and serialize JSON stably.
-- [ ] Render scaled PNG and restore preview in `finally`.
-- [ ] Add `mp4-muxer`; verify AVC/H.264 via WebCodecs.
-- [ ] Render exact timestamps, honor cancellation, close resources, restore rendering.
-- [ ] Expose exactly three export actions, run tests/build; commit `feat: export png mp4 and scene json`.
+### Task 5: Acceptance and product verification
 
-### Task 5: Integration and visual QA
+**Files:** `src/app/app-acceptance-data.ts`, product-owned Vitest files, `e2e/dither-studio.spec.ts`, `docs/toolcraft/agent-worklog.md`, `README.md`.
 
-**Files:** test files above, `src/styles/app.css`, `README.md`.
-
-**Interfaces:** Produces verified and documented Image MVP.
-
-- [ ] Test upload→edit→JSON/re-import, missing source, pause lifecycle, reduced motion, keyboard, corrupt files.
-- [ ] Run tests, `npm.cmd run ai:check`, and build.
-- [ ] Capture 1440×1000 and 390×844 screenshots using the reference.
-- [ ] Compare crop, silhouettes, density, midtones, focus, responsiveness, overflow; tune and retest.
-- [ ] Document setup, formats, MP4 requirements, privacy, handoff, and runtime integration.
-- [ ] Verify and remove only project-local npm/pnpm caches.
-- [ ] Commit `docs: finish dither studio verification`.
+- [ ] Read `docs/toolcraft/acceptance-testing.md` and `docs/toolcraft/performance.md` Verification guidance before writing proof.
+- [ ] Implement observable acceptance for every visible control/entity, upload, pin ownership, settings transfer, persistence reload, timeline loop, render scale, PNG, and MP4.
+- [ ] Add browser proof for actual dither pixel change, algorithm branches, source removal, pin movement, pointer response, forward loop seam, export artifacts, and narrow layout.
+- [ ] Update README and worklog with concrete decisions and remaining risks.
+- [ ] Run focused Vitest and browser acceptance during development.
+- [ ] Run exactly one `npm.cmd run verify:delivery`; do not run measured performance.
+- [ ] Use the local Toolcraft browser skill and host-embedded browser for manual desktop/narrow visual QA with supplied references.
+- [ ] Start `npm.cmd run dev`, leave the app usable, restore `.git`, and commit `feat: deliver interactive dither studio`.
 
