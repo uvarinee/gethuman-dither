@@ -1,0 +1,10 @@
+.canvas {
+  display: block;
+  height: 100%;
+  touch-action: none;
+  width: 100%;
+}
+
+.hidden {
+  display: none;
+}

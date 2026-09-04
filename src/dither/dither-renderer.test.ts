@@ -1,0 +1,48 @@
+import { describe, expect, it } from "vitest";
+import { getDynamicCell, StaticDitherCache, type DynamicDitherSettings } from "./dither-renderer";
+
+const dynamics: DynamicDitherSettings = {
+  background: "#000000",
+  breathingAmount: 0.1,
+  breathingEnabled: true,
+  includeBackground: true,
+  ink: "#ffffff",
+  pins: [{ bloom: 40, color: "#ff0000", core: 5, intensity: 1, position: { x: 10, y: 10 }, pulse: "double" }],
+  pointer: { active: true, radius: 20, strength: 0.5, x: 10, y: 10 },
+  shimmerAmount: 0.4,
+  shimmerColor: "#00ff00",
+  shimmerEnabled: true,
+  shimmerSpeed: 1,
+  timelineProgress: 0,
+};
+
+describe("dither renderer", () => {
+  it("retains a static field until source or static settings change", () => {
+    const cache = new StaticDitherCache();
+    const source = { data: new Uint8ClampedArray([255, 255, 255, 255]), height: 1, width: 1 };
+    const options = {
+      dither: { algorithm: "bayer", invert: false, seed: 2, threshold: 128 } as const,
+      pixelSize: 2,
+      source,
+      targetHeight: 4,
+      targetWidth: 4,
+      tone: { blackPoint: 0, blur: 0, gamma: 1, grain: 0, seed: 1, whitePoint: 255 },
+    };
+    const first = cache.get(options);
+    expect(cache.get(options)).toBe(first);
+    expect(cache.get({ ...options, dither: { ...options.dither, threshold: 129 } })).not.toBe(first);
+  });
+
+  it("stitches dynamic motion at the timeline loop boundary", () => {
+    expect(getDynamicCell(10, 10, { ...dynamics, timelineProgress: 0 })).toEqual(
+      getDynamicCell(10, 10, { ...dynamics, timelineProgress: 1 }),
+    );
+  });
+
+  it("applies pointer and pin influence without changing static data", () => {
+    const near = getDynamicCell(10, 10, dynamics);
+    const far = getDynamicCell(1000, 1000, dynamics);
+    expect(near.scale).toBeGreaterThan(far.scale);
+    expect(near.color[0]).toBeGreaterThan(near.color[1]);
+  });
+});
