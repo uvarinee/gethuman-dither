@@ -18,6 +18,7 @@ describe("Interactive Dither Studio shell", () => {
     expect(appSchema.assembly.components).toEqual([
       "canvas",
       "controlsPanel",
+      "timelinePanel",
       "toolbar",
     ]);
     expect(appSchema.panels.controls?.title).toBe("Dither controls");

@@ -8,6 +8,10 @@
 
 ## Product decisions
 
+### Resumed implementation status — 2026-09-04
+
+Tasks 1–4 are implemented and the production build passes. Focused functional browser checks cover controls, media, pointer, independent pins, timeline, backing resolution, Infinity, artifacts, settings and reload. Task 5 remains incomplete: the first protected delivery gate reaches product tests but a signed framework assertion compares normalized `/` paths against Windows `\\` paths. The copied framework has not been edited. Full-delivery proof requires an upstream correction/regeneration or a compatible verification environment. WSL was not available from this session. The checklist below is the original execution plan; this status records the actual stopping point.
+
 - Canvas: `editable-output`, default 1920×1080, render scale enabled.
 - View interaction: `non-spatial`; this is a 2D image scene.
 - Timeline: enabled playback timeline because motion and MP4 export are required; seamless forward loop, default 7.2 seconds.
@@ -92,4 +96,3 @@ Reachable workload dimensions are source pixel area (external input, bounded by 
 - [ ] Run exactly one `npm.cmd run verify:delivery`; do not run measured performance.
 - [ ] Use the local Toolcraft browser skill and host-embedded browser for manual desktop/narrow visual QA with supplied references.
 - [ ] Start `npm.cmd run dev`, leave the app usable, restore `.git`, and commit `feat: deliver interactive dither studio`.
-

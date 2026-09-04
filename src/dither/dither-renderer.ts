@@ -7,6 +7,7 @@ import {
   type RasterPixels,
   type ToneSettings,
 } from "./dither-algorithms";
+import { assertDitherWorkload } from "./dither-limits";
 
 export type StaticDitherField = Readonly<{
   height: number;
@@ -164,7 +165,9 @@ export function getDynamicCell(
   let color = parseHexColor(settings.ink);
 
   if (settings.shimmerEnabled) {
-    const wave = 0.5 + 0.5 * Math.sin((sceneX + sceneY) * 0.018 - progress * TAU * settings.shimmerSpeed);
+    // A positive periodic velocity completes one forward turn at every speed.
+    const phase = progress * TAU + Math.tanh(settings.shimmerSpeed - 1) * Math.sin(progress * TAU);
+    const wave = 0.5 + 0.5 * Math.sin((sceneX + sceneY) * 0.018 - phase);
     const mix = clamp01((wave - 0.62) / 0.38) * settings.shimmerAmount;
     const shimmer = parseHexColor(settings.shimmerColor);
     color = color.map((channel, index) => Math.round(channel + (shimmer[index] - channel) * mix)) as unknown as readonly [number, number, number];
@@ -196,8 +199,9 @@ export function renderDitherFrame(
   width: number,
   height: number,
   settings: DynamicDitherSettings,
+  clear = true,
 ): void {
-  context.clearRect(0, 0, width, height);
+  if (clear) context.clearRect(0, 0, width, height);
   if (settings.includeBackground) {
     context.fillStyle = settings.background;
     context.fillRect(0, 0, width, height);
@@ -222,6 +226,7 @@ export function renderDitherFrame(
 export function decodeImageElement(image: HTMLImageElement): RasterPixels {
   const width = image.naturalWidth;
   const height = image.naturalHeight;
+  assertDitherWorkload({ sourceWidth: width, sourceHeight: height });
   if (width <= 0 || height <= 0) throw new Error("Source image has no decodable pixels.");
   const canvas = document.createElement("canvas");
   canvas.width = width;

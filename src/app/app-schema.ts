@@ -223,7 +223,8 @@ export const appSchema = defineToolcraft({
             shimmerSpeed: {
               applicability: whenEnabled("motion.shimmer.enabled"),
               defaultValue: 0.65,
-              label: "Speed",
+              description: "Redistributes forward drift speed within each complete timeline cycle. Timeline duration controls overall speed.",
+              label: "Drift profile",
               max: 2,
               min: 0,
               performanceRole: "responsiveness",

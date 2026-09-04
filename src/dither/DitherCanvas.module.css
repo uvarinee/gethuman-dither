@@ -8,3 +8,7 @@
 .hidden {
   display: none;
 }
+
+.handles { position: absolute; inset: 0; pointer-events: none; }
+.pin { outline: none; outline-width: 0; }
+.pin { position: absolute; width: 20px; height: 20px; transform: translate(-50%, -50%); border: 1px solid var(--foreground); border-radius: 50%; background: transparent; box-shadow: 0 0 0 1px var(--background); cursor: move; pointer-events: auto; touch-action: none; }

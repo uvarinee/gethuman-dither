@@ -11,6 +11,7 @@ import {
 } from "@/toolcraft/runtime";
 
 import { appSchema } from "./app-schema";
+import { MAX_DITHER_SOURCE_PIXELS, MAX_DITHER_PREVIEW_PIXELS, MAX_DITHER_EXPORT_PIXELS, MAX_DITHER_PINS } from "@/dither/dither-limits";
 
 type DitherRendererPasses = {
   "source-decode": ToolcraftRendererPipelinePassContract<unknown>;
@@ -59,7 +60,7 @@ export const appRendererPipelineRegistration =
         interaction: "control-change",
         invalidates: ["dither-build", ...previewPasses],
         mustNotInvalidate: ["source-decode", "tone-map"],
-        targets: ["dither.algorithm", "dither.invert", "dither.ink"],
+        targets: ["dither.algorithm", "dither.invert"],
       },
       {
         interaction: "control-drag",
@@ -79,6 +80,7 @@ export const appRendererPipelineRegistration =
         invalidates: [...previewPasses],
         mustNotInvalidate: [...sourcePasses],
         targets: [
+          "dither.ink",
           "export.includeBackground",
           "appearance.background",
           "motion.shimmer.enabled",
@@ -98,6 +100,29 @@ export const appRendererPipelineRegistration =
           "export.video.format",
           "export.video.resolution",
         ],
+      },
+      {
+        interaction: "control-change",
+        invalidates: [...sourcePasses, ...previewPasses],
+        targets: ["source.transform"],
+      },
+      {
+        interaction: "control-change",
+        invalidates: ["dither-build", ...previewPasses],
+        mustNotInvalidate: ["source-decode", "tone-map"],
+        targets: ["canvas.size"],
+      },
+      {
+        interaction: "control-change",
+        invalidates: [...previewPasses],
+        mustNotInvalidate: [...sourcePasses],
+        targets: ["canvas.renderScale", "canvas.devicePixelRatio"],
+      },
+      {
+        interaction: "control-drag",
+        invalidates: [...previewPasses],
+        mustNotInvalidate: [...sourcePasses],
+        targets: ["pointer.state", "pins.items"],
       },
       {
         interaction: "timeline-playback",
@@ -188,13 +213,13 @@ export const appRendererPipelineRegistration =
       },
       {
         cost: {
-          dimensions: ["preview-pixels"],
+          dimensions: [],
           frequency: "frame",
-          relationship: "linear",
+          relationship: "constant",
         },
         id: "dynamic-field",
-        inputs: ["dither-build", "timeline.time", "motion.settings", "pointer.state", "pins.items"],
-        invalidatedBy: ["dither-build", "timeline.time", "motion.settings", "pointer.state", "pins.items"],
+        inputs: ["dither-build", "timeline.time", "motion.settings", "pointer.state", "pins.items", "dither.ink", "appearance.background", "export.includeBackground"],
+        invalidatedBy: ["dither-build", "timeline.time", "motion.settings", "pointer.state", "pins.items", "dither.ink", "appearance.background", "export.includeBackground"],
         kind: "composite",
         lifecycle: { cache: "none", resourceScope: "call" },
         output: "intermediate",
@@ -203,9 +228,9 @@ export const appRendererPipelineRegistration =
       },
       {
         cost: {
-          dimensions: ["preview-pixels"],
+          dimensions: ["preview-pixels", "pin-count"],
           frequency: "frame",
-          relationship: "linear",
+          relationship: "product",
         },
         id: "preview-present",
         inputs: ["dynamic-field", "destination.context"],
@@ -218,12 +243,12 @@ export const appRendererPipelineRegistration =
       },
       {
         cost: {
-          dimensions: ["export-pixels", "sample-step", "source-pixels"],
+          dimensions: ["export-pixels", "sample-step", "source-pixels", "pin-count"],
           frequency: "batch",
           relationship: "product",
         },
         id: "export-frame",
-        inputs: ["source.image", "tone.settings", "dither.settings", "timeline.time", "motion.settings", "pins.items", "destination.context"],
+        inputs: ["source.image", "source.transform", "tone.settings", "dither.settings", "dither.ink", "timeline.time", "motion.settings", "pins.items", "appearance.background", "export.includeBackground", "destination.context"],
         invalidatedBy: ["export.frameState", "destination.context"],
         kind: "export",
         lifecycle: { cache: "none", resourceScope: "call" },
@@ -252,19 +277,19 @@ const numericAdapter = (dimensionId: string) =>
 const workloadEnvelope = {
   dimensions: [
     {
-      batchMax: 67_108_864,
+      batchMax: MAX_DITHER_SOURCE_PIXELS,
       defaultValue: 2_073_600,
       id: "source-pixels",
-      interactiveMax: 67_108_864,
+      interactiveMax: MAX_DITHER_SOURCE_PIXELS,
       mapping: "area",
       source: { id: "source.image.decodedPixels", kind: "external-input" },
       unit: "pixels",
     },
     {
-      batchMax: 67_108_864,
+      batchMax: MAX_DITHER_PREVIEW_PIXELS,
       defaultValue: 8_294_400,
       id: "preview-pixels",
-      interactiveMax: 67_108_864,
+      interactiveMax: MAX_DITHER_PREVIEW_PIXELS,
       mapping: "area",
       source: {
         kind: "runtime-state",
@@ -286,12 +311,21 @@ const workloadEnvelope = {
       unit: "pixels",
     },
     {
-      batchMax: 37_748_736,
+      batchMax: MAX_DITHER_EXPORT_PIXELS,
       defaultValue: 9_437_184,
       id: "export-pixels",
       mapping: "area",
       source: { kind: "runtime-state", path: "export.outputPixels" },
       unit: "pixels",
+    },
+    {
+      batchMax: MAX_DITHER_PINS,
+      defaultValue: 1,
+      id: "pin-count",
+      interactiveMax: MAX_DITHER_PINS,
+      mapping: "direct",
+      source: { kind: "runtime-state", path: "values.pins.items.length" },
+      unit: "pins",
     },
   ],
 } satisfies ToolcraftEnvelopePerformanceConfig["workloadEnvelope"];
@@ -302,6 +336,18 @@ const fixtureAdapters = {
     "preview-pixels": numericAdapter("preview-pixels"),
     "sample-step": numericAdapter("sample-step"),
     "source-pixels": numericAdapter("source-pixels"),
+    "pin-count": defineToolcraftFixtureAdapter<number>({
+      apply: (value) => value,
+      dimensionId: "pin-count",
+      kind: "exhaustive-discrete",
+      domain: {
+        kind: "runtime-state",
+        path: "values.pins.items.length",
+        attestation: "The renderer accepts every integer count from zero through MAX_DITHER_PINS; larger collections remain editable but rendering explicitly rejects the complete operation.",
+      },
+      entries: Array.from({ length: MAX_DITHER_PINS + 1 }, (_, value) => ({ value, appliedValue: value })),
+      observe: (value) => value,
+    }),
   },
 };
 
@@ -343,6 +389,7 @@ const performanceFoundation = defineToolcraftPerformance({
       "Minimum pixel size and Resolution scale 2 maximize interactive sample count.",
       "Large source and export frames multiply tone, dither, and composite work.",
       "Timeline, pointer, and pin updates must reuse source-bound static caches.",
+      "Resource guards reject unsupported source, backing, export, or pin workloads without silently reducing fidelity; these are support boundaries, not measured performance guarantees.",
     ],
     previewRenderer: "canvas-2d",
     productRepresentation: "pixel",
@@ -350,7 +397,7 @@ const performanceFoundation = defineToolcraftPerformance({
     sourceRepresentation: "image-media",
     whyNotAlternativeStrategies: [
       "DOM or SVG would create excessive nodes and would not preserve raster dither semantics.",
-      "WebGL and WebGPU add provider complexity before Canvas 2D has failed the structural render-plan assessment.",
+      "Canvas 2D is the functional baseline; the assessment's pending Canvas 2D/WebGL kernel comparison is deferred and no performance superiority is claimed.",
     ],
   },
   scenarios: [],

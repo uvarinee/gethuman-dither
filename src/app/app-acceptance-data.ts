@@ -79,7 +79,7 @@ export const appProductReadiness: ToolcraftProductReadiness = {
   mode: "product",
   productName: "Interactive Dither Studio",
   productSummary:
-    "A responsive image studio for monochrome dithering, animated highlights, pointer fields, and pulsing pins.",
+    "A desktop image studio for monochrome dithering, animated highlights, pointer fields, and pulsing pins.",
   requestedBehavior:
     "Import JPG or PNG images, tune tone and dithering, animate shimmer and pins, interact with the canvas, and export PNG, MP4, or portable settings JSON.",
   viewInteraction: {
@@ -90,7 +90,7 @@ export const appProductReadiness: ToolcraftProductReadiness = {
 
 const browser = (testName: string) => ({
   budget: "standard" as const,
-  file: "e2e/dither-studio.spec.ts" as const,
+  file: "e2e/product-dither.spec.ts" as const,
   testName,
 });
 
@@ -104,7 +104,12 @@ function controlAcceptance(
   return {
     automated: true,
     automatedTestName: `${label} changes dither output`,
-    browser: browser(`browser: ${label} changes dither output`),
+    browser: { ...browser(`browser: ${label} changes dither output`),
+      ...(id.startsWith("motion.") ? { file: "e2e/product-dither-motion.spec.ts" } : {}),
+      ...(id === "dither.ink" ? { file: "e2e/product-dither-ink.spec.ts" } : {}),
+      ...(id.startsWith("tone.") ? { file: "e2e/product-tone.spec.ts" } : {}),
+      ...(id.startsWith("source.") ? { file: "e2e/product-source.spec.ts" } : {}),
+      ...(id.startsWith("pointer.") ? { file: "e2e/product-dither-pointer.spec.ts" } : {}) },
     componentType,
     evidence: "rendered-pixels",
     expectedObservable: `${label} changes the committed dither frame or its runtime-owned delivery setting.`,
@@ -119,6 +124,7 @@ function controlAcceptance(
 
 const controlRows: ToolcraftComponentAcceptance[] = [
   controlAcceptance("background.include", "export.includeBackground", "switch", "Background", {
+    browser: { ...browser("browser: Background changes dither output"), file: "e2e/product-dither-background.spec.ts" },
     backgroundOutputCoverage: [
       "preview-hidden-when-excluded",
       "image-transparent-when-excluded",
@@ -126,7 +132,9 @@ const controlRows: ToolcraftComponentAcceptance[] = [
       "video-background-preserved",
     ],
   }),
-  controlAcceptance("background.color", "appearance.background", "color", "Background color"),
+  controlAcceptance("background.color", "appearance.background", "color", "Background color", {
+    browser: { ...browser("browser: Background color changes dither output"), file: "e2e/product-dither-background.spec.ts" },
+  }),
   controlAcceptance("source.image", "source.image", "fileDrop", "Source image", {
     evidence: "media-lifecycle",
     mediaLifecycleCoverage: ["upload", "remove", "rotate", "flip", "transform-output", "reset"],
@@ -146,7 +154,9 @@ const controlRows: ToolcraftComponentAcceptance[] = [
   controlAcceptance("motion.shimmer", "motion.shimmer.enabled", "switch", "Shimmer"),
   controlAcceptance("motion.shimmer-color", "motion.shimmer.color", "color", "Shimmer color"),
   controlAcceptance("motion.shimmer-amount", "motion.shimmer.amount", "slider", "Shimmer amount"),
-  controlAcceptance("motion.shimmer-speed", "motion.shimmer.speed", "slider", "Shimmer speed"),
+  controlAcceptance("motion.shimmer-speed", "motion.shimmer.speed", "slider", "Shimmer speed", {
+    expectedObservable: "Drift profile redistributes shimmer velocity through one forward cycle; timeline duration controls the overall speed.",
+  }),
   controlAcceptance("motion.breathing", "motion.breathing.enabled", "switch", "Breathing"),
   controlAcceptance("motion.breathing-amount", "motion.breathing.amount", "slider", "Breathing amount"),
   controlAcceptance("pointer.enabled", "pointer.enabled", "switch", "Pointer response"),
@@ -154,6 +164,7 @@ const controlRows: ToolcraftComponentAcceptance[] = [
   controlAcceptance("pointer.strength", "pointer.strength", "slider", "Pointer strength"),
   controlAcceptance("pointer.decay", "pointer.decay", "slider", "Pointer decay"),
   controlAcceptance("pins.items", "pins.items", "collectionActions", "Pins", {
+    browser: { ...browser("browser: Pins changes dither output"), file: "e2e/product-dither-pins.spec.ts" },
     controlPartCoverage: [
       "collectionActions.add",
       "collectionActions.remove",
@@ -162,19 +173,23 @@ const controlRows: ToolcraftComponentAcceptance[] = [
     interactionId: "pin-position-entry",
   }),
   controlAcceptance("image.format", "export.image.format", "select", "Image format", {
-    evidence: "product-output",
+    browser: { budget: "extended-io", file: "e2e/product-dither-image.spec.ts", testName: "browser: image format resolves real artifact settings" },
+    evidence: "exported-bytes",
     optionCoverage: ["png", "jpg"],
   }),
   controlAcceptance("image.resolution", "export.image.resolution", "select", "Image resolution", {
-    evidence: "product-output",
+    browser: { budget: "extended-io", file: "e2e/product-dither-image.spec.ts", testName: "browser: image resolution resolves real artifact settings" },
+    evidence: "exported-bytes",
     optionCoverage: ["2k", "4k", "8k"],
   }),
   controlAcceptance("video.format", "export.video.format", "select", "Video format", {
-    evidence: "product-output",
+    browser: { budget: "extended-io", file: "e2e/product-dither-video.spec.ts", testName: "browser: video format resolves real artifact settings" },
+    evidence: "exported-bytes",
     optionCoverage: ["mp4", "webm"],
   }),
   controlAcceptance("video.resolution", "export.video.resolution", "select", "Video resolution", {
-    evidence: "product-output",
+    browser: { budget: "extended-io", file: "e2e/product-dither-video.spec.ts", testName: "browser: video resolution resolves real artifact settings" },
+    evidence: "exported-bytes",
     optionCoverage: ["current", "4k"],
   }),
 ];
@@ -186,8 +201,8 @@ export const appAcceptance: readonly ToolcraftComponentAcceptance[] = [
     automatedTestName: "restores dither workspace after reload",
     browser: {
       budget: "extended-io",
-      file: "e2e/app-persistence.spec.ts",
-      testName: "browser: app restores exact canvas, values, and panel workspace slices after reload",
+      file: "e2e/product-dither-persistence.spec.ts",
+      testName: "browser: dither workspace restores canvas values panels timeline and media",
     },
     componentType: "persistence",
     evidence: "persistence-state",
@@ -204,7 +219,7 @@ export const appAcceptance: readonly ToolcraftComponentAcceptance[] = [
   {
     automated: true,
     automatedTestName: "keeps selected raster backing in every required state",
-    browser: browser("browser: dither canvas preserves selected backing pixels"),
+    browser: { ...browser("browser: dither canvas preserves selected backing pixels"), file: "e2e/product-renderer.spec.ts" },
     componentType: "canvas",
     evidence: "rendered-pixels",
     expectedObservable:
@@ -222,7 +237,7 @@ export const appAcceptance: readonly ToolcraftComponentAcceptance[] = [
   {
     automated: true,
     automatedTestName: "plays a seamless forward dither loop",
-    browser: browser("browser: dither timeline is seamless and forward-only"),
+    browser: { ...browser("browser: dither timeline is seamless and forward-only"), file: "e2e/product-dither-timeline.spec.ts" },
     componentType: "timeline",
     evidence: "timeline-output",
     expectedObservable:
@@ -230,7 +245,6 @@ export const appAcceptance: readonly ToolcraftComponentAcceptance[] = [
     fixture: "7.2-second animated dither loop",
     id: "timeline.playback",
     kind: "runtime",
-    target: "timeline.playback",
     timelineCoverage: "playback",
     timelineLoopProof: {
       direction: "forward-only",
@@ -244,7 +258,7 @@ export const appAcceptance: readonly ToolcraftComponentAcceptance[] = [
   {
     automated: true,
     automatedTestName: "drags a pin directly over the image",
-    browser: browser("browser: canvas pin drag updates its normalized position"),
+    browser: { ...browser("browser: canvas pin drag updates its normalized position"), file: "e2e/product-dither-pins.spec.ts" },
     canvasHandle: {
       outputObservable: "The pin highlight moves with the textless canvas handle.",
       testId: "dither-pin-handle",
@@ -263,8 +277,8 @@ export const appAcceptance: readonly ToolcraftComponentAcceptance[] = [
   {
     actionCoverage: ["export.png", "export.video"],
     automated: true,
-    automatedTestName: "exports decoded dither image bytes",
-    browser: browser("browser: PNG export contains deterministic dither pixels"),
+    automatedTestName: "draws dither product into the supplied export context without editor overlays",
+    browser: { budget: "extended-io", file: "e2e/product-dither-export.spec.ts", testName: "browser: PNG export contains deterministic dither pixels" },
     componentType: "panelActions",
     evidence: "exported-bytes",
     exportArtifactCoverage: "all-required-image-export-behavior",
@@ -278,8 +292,8 @@ export const appAcceptance: readonly ToolcraftComponentAcceptance[] = [
   {
     actionCoverage: ["export.png", "export.video"],
     automated: true,
-    automatedTestName: "exports timestamped animated dither video",
-    browser: { ...browser("browser: MP4 export contains changing dither frames"), budget: "extended-io" },
+    automatedTestName: "maps the canonical video schedule to changing deterministic product frames",
+    browser: { budget: "extended-io", file: "e2e/product-dither-export.spec.ts", testName: "browser: MP4 export contains changing dither frames" },
     componentType: "panelActions",
     evidence: "exported-bytes",
     exportArtifactCoverage: "all-required-video-export-behavior",
@@ -294,7 +308,7 @@ export const appAcceptance: readonly ToolcraftComponentAcceptance[] = [
   {
     automated: true,
     automatedTestName: "preserves scene continuity in Infinity mode",
-    browser: browser("browser: Infinity mode preserves dither scene and backing"),
+    browser: { ...browser("browser: Infinity mode preserves dither scene and backing"), file: "e2e/product-dither-canvas.spec.ts" },
     componentType: "canvas",
     evidence: "viewport-side-effect",
     expectedObservable:
@@ -309,7 +323,7 @@ export const appAcceptance: readonly ToolcraftComponentAcceptance[] = [
   {
     automated: true,
     automatedTestName: "crops Infinity image export to product bounds",
-    browser: browser("browser: Infinity PNG uses dither scene bounds"),
+    browser: { ...browser("browser: Infinity PNG uses dither scene bounds"), file: "e2e/product-dither-infinity-export.spec.ts", budget: "extended-io" },
     componentType: "canvas",
     evidence: "exported-bytes",
     expectedObservable: "Infinity PNG crops to visible product and media bounds.",
@@ -323,7 +337,7 @@ export const appAcceptance: readonly ToolcraftComponentAcceptance[] = [
   {
     automated: true,
     automatedTestName: "keeps stable bounds across Infinity video frames",
-    browser: { ...browser("browser: Infinity MP4 uses one stable scene envelope"), budget: "extended-io" },
+    browser: { ...browser("browser: Infinity MP4 uses one stable scene envelope"), file: "e2e/product-dither-infinity-export.spec.ts", budget: "extended-io" },
     componentType: "canvas",
     evidence: "exported-bytes",
     expectedObservable: "Infinity MP4 uses one scene envelope for every scheduled frame.",
