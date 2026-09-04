@@ -35,7 +35,7 @@ describe("Interactive Dither Studio product contract", () => {
       ]);
     expect(appControlSectionInventory.find(({ id }) => id === "motion")?.finiteSelectors)
       .toEqual([
-        expect.objectContaining({ role: "branch", target: "motion.shimmer.enabled" }),
+        expect.objectContaining({ role: "branch", target: "motion.flicker.enabled" }),
         expect.objectContaining({ role: "branch", target: "motion.breathing.enabled" }),
       ]);
   });
@@ -67,8 +67,8 @@ describe("Interactive Dither Studio product contract", () => {
     expect(controls.get("dither.pixelSize")).toMatchObject({
       defaultValue: 2, max: 16, min: 1, performanceRole: "workload",
     });
-    expect(controls.get("motion.shimmer.amount")?.applicability).toMatchObject({
-      all: [{ equals: true, target: "motion.shimmer.enabled" }], mode: "conditional",
+    expect(controls.get("motion.flicker.amount")?.applicability).toMatchObject({
+      all: [{ equals: true, target: "motion.flicker.enabled" }], mode: "conditional",
     });
     expect(controls.get("motion.breathing.amount")?.applicability).toMatchObject({
       all: [{ equals: true, target: "motion.breathing.enabled" }], mode: "conditional",

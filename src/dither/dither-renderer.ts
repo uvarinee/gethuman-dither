@@ -8,6 +8,7 @@ import {
   type ToneSettings,
 } from "./dither-algorithms";
 import { assertDitherWorkload } from "./dither-limits";
+import { particleFlicker, pointerEnvelope } from "./dither-flicker";
 
 export type StaticDitherField = Readonly<{
   height: number;
@@ -39,11 +40,10 @@ export type DynamicDitherSettings = Readonly<{
   includeBackground: boolean;
   ink: string;
   pins: readonly DitherPin[];
-  pointer: Readonly<{ active: boolean; radius: number; strength: number; x: number; y: number }>;
-  shimmerAmount: number;
-  shimmerColor: string;
-  shimmerEnabled: boolean;
-  shimmerSpeed: number;
+  pointer: Readonly<{ active: boolean; radius: number; strength: number; x: number; y: number; energy?: number; speed?: number; softness?: number; size?: number }>;
+  flickerAmount: number;
+  flickerEnabled: boolean;
+  flickerSpeed: number;
   timelineProgress: number;
 }>;
 
@@ -157,25 +157,31 @@ export function getDynamicCell(
   sceneX: number,
   sceneY: number,
   settings: DynamicDitherSettings,
-): Readonly<{ color: readonly [number, number, number]; scale: number }> {
+): Readonly<{ color: readonly [number, number, number]; scale: number; opacity: number; offsetX: number; offsetY: number }> {
   const progress = ((settings.timelineProgress % 1) + 1) % 1;
   let scale = settings.breathingEnabled
     ? 1 + Math.sin(progress * TAU) * settings.breathingAmount
     : 1;
   let color = parseHexColor(settings.ink);
 
-  if (settings.shimmerEnabled) {
-    // A positive periodic velocity completes one forward turn at every speed.
-    const phase = progress * TAU + Math.tanh(settings.shimmerSpeed - 1) * Math.sin(progress * TAU);
-    const wave = 0.5 + 0.5 * Math.sin((sceneX + sceneY) * 0.018 - phase);
-    const mix = clamp01((wave - 0.62) / 0.38) * settings.shimmerAmount;
-    const shimmer = parseHexColor(settings.shimmerColor);
-    color = color.map((channel, index) => Math.round(channel + (shimmer[index] - channel) * mix)) as unknown as readonly [number, number, number];
+  let influence = 0;
+  let offsetX = 0;
+  let offsetY = 0;
+  if (settings.pointer.active) {
+    const dx = sceneX - settings.pointer.x;
+    const dy = sceneY - settings.pointer.y;
+    influence = pointerEnvelope(Math.hypot(dx, dy), settings.pointer.radius, settings.pointer.softness ?? 0.65) * (settings.pointer.energy ?? 1);
+    const raised = influence * settings.pointer.strength;
+    offsetX = dx * raised * 0.28;
+    offsetY = dy * raised * 0.28 - settings.pointer.radius * raised * 0.12;
+    scale += raised * 0.25 + influence * (settings.pointer.size ?? 0.2);
   }
 
-  if (settings.pointer.active) {
-    const distance = Math.hypot(sceneX - settings.pointer.x, sceneY - settings.pointer.y);
-    scale += (1 - clamp01(distance / Math.max(1, settings.pointer.radius))) * settings.pointer.strength;
+  let opacity = 1;
+  if (settings.flickerEnabled) {
+    const ambient = particleFlicker(sceneX, sceneY, progress, settings.flickerSpeed);
+    const fast = influence > 0 ? particleFlicker(sceneX, sceneY, progress, settings.flickerSpeed * (settings.pointer.speed ?? 3)) : ambient;
+    opacity = 1 - clamp01(settings.flickerAmount) * (1 - (ambient + (fast - ambient) * influence));
   }
 
   for (const pin of settings.pins) {
@@ -190,7 +196,7 @@ export function getDynamicCell(
     scale += influence * 0.65;
   }
 
-  return { color, scale: Math.max(0.08, scale) };
+  return { color, scale: Math.max(0.08, scale), opacity, offsetX, offsetY };
 }
 
 export function renderDitherFrame(
@@ -208,6 +214,7 @@ export function renderDitherFrame(
   }
   const cellWidth = width / field.width;
   const cellHeight = height / field.height;
+  const originalAlpha = context.globalAlpha ?? 1;
   for (let y = 0; y < field.height; y += 1) {
     for (let x = 0; x < field.width; x += 1) {
       const index = y * field.width + x;
@@ -218,9 +225,11 @@ export function renderDitherFrame(
       const drawWidth = Math.max(1, cellWidth * 0.82 * dynamic.scale);
       const drawHeight = Math.max(1, cellHeight * 0.82 * dynamic.scale);
       context.fillStyle = `rgb(${dynamic.color[0]} ${dynamic.color[1]} ${dynamic.color[2]})`;
-      context.fillRect(centerX - drawWidth / 2, centerY - drawHeight / 2, drawWidth, drawHeight);
+      context.globalAlpha = originalAlpha * dynamic.opacity;
+      context.fillRect(centerX + dynamic.offsetX - drawWidth / 2, centerY + dynamic.offsetY - drawHeight / 2, drawWidth, drawHeight);
     }
   }
+  context.globalAlpha = originalAlpha;
 }
 
 export function decodeImageElement(image: HTMLImageElement): RasterPixels {

@@ -9,8 +9,8 @@ const settings: DynamicDitherSettings = {
   background: "#0A0A0A", breathingAmount: 0.08, breathingEnabled: true,
   includeBackground: false, ink: "#F4F1EA", pins: [],
   pointer: { active: false, radius: 180, strength: 0, x: 0, y: 0 },
-  shimmerAmount: 1, shimmerColor: "#FF4F2E", shimmerEnabled: true,
-  shimmerSpeed: 0.65, timelineProgress: 0,
+  flickerAmount: 1, flickerEnabled: true,
+  flickerSpeed: 0.65, timelineProgress: 0,
 };
 
 describe("dither artifact frame semantics", () => {
@@ -40,7 +40,7 @@ describe("dither artifact frame semantics", () => {
     const paints: Array<{ color: string; rect: number[] }> = [];
     const context = { fillStyle: "", fillRect(...rect: number[]) { paints.push({ color: this.fillStyle, rect }); } };
     renderDitherFrame(context as unknown as CanvasRenderingContext2D, field, 16, 16,
-      { ...settings, shimmerEnabled: false, breathingEnabled: false }, false);
+      { ...settings, flickerEnabled: false, breathingEnabled: false }, false);
     expect(paints).toHaveLength(64);
     expect(paints.every(({ color }) => color === "rgb(244 241 234)")).toBe(true);
     expect(paints.every(({ rect }) => rect[2] > 0 && rect[3] > 0)).toBe(true);

@@ -1,9 +1,10 @@
 import { test } from "./toolcraft-product-test";
 import { expectToolcraftProductObservableToChange } from "./product-observable-helpers";
-import { ditherOutput, prepareDitherPhase } from "./product-dither-helpers";
+import { ditherOutput, prepareDither, seekDitherPhase } from "./product-dither-helpers";
 
-test("browser: Ink changes dither output", async ({ page }) => {
-  const session = await prepareDitherPhase(page);
+test("browser: Particle color changes dither output", async ({ page }) => {
+  const session = await prepareDither(page);
+    await seekDitherPhase(page);
   await expectToolcraftProductObservableToChange(session,
     session.controlAction("dither.ink", async field => {
       const input = field.getByRole("textbox");

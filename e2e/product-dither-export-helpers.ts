@@ -101,7 +101,7 @@ export async function downloadDitherWithProgress(page: Page, label: "Export PNG"
 
 export async function prepareDitherExport(page: Page) {
   const session = await prepareDither(page);
-  await setDitherSwitch(page, "motion.shimmer.enabled", false);
+  await setDitherSwitch(page, "motion.flicker.enabled", false);
   await setDitherSwitch(page, "motion.breathing.enabled", false);
   return session;
 }

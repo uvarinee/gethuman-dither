@@ -13,7 +13,7 @@ it("restores dither workspace after reload", () => {
   };
   const original = createToolcraftState(appSchema, {
     canvas: { size: { width: 320, height: 180, unit: "px" }, zoom: 110 },
-    values: { "tone.gamma": 1.3, "dither.invert": true, "dither.algorithm": "bayer", "motion.shimmer.speed": 0.65 },
+    values: { "tone.gamma": 1.3, "dither.invert": true, "dither.algorithm": "bayer", "motion.flicker.speed": 0.65 },
     panels: { controls: { collapsed: true, offset: { x: -48, y: 24 } } },
     timeline: { currentTimeSeconds: 0.7, durationSeconds: 3, isPlaying: false },
     mediaAssets: [media],

@@ -5,7 +5,7 @@ import { getToolcraftControlApplicabilityCases, getToolcraftApplicabilityRequire
 import { getToolcraftControlFieldByTarget } from "./browser-control-target-helpers";
 import { expectToolcraftControlApplicabilityState } from "./browser-control-applicability-evidence";
 import { expectToolcraftProductObservableToChange, getToolcraftProductObservableSnapshot } from "./product-observable-helpers";
-import { ditherOutput, prepareDither, setDitherSwitch } from "./product-dither-helpers";
+import { ditherOutput, prepareDither, seekDitherPhase, setDitherSwitch } from "./product-dither-helpers";
 
 async function hoverField(page: import("@playwright/test").Page) {
   const box = await page.locator(ditherOutput).boundingBox();
@@ -26,9 +26,13 @@ for (const [label, target, requirementId] of [
   ["Pointer radius", "pointer.radius", "pointer.radius"],
   ["Pointer strength", "pointer.strength", "pointer.strength"],
   ["Pointer decay", "pointer.decay", "pointer.decay"],
+  ["Pointer speed", "pointer.speed", "pointer.speed"],
+  ["Pointer softness", "pointer.softness", "pointer.softness"],
+  ["Pointer size", "pointer.size", "pointer.size"],
 ] as const) {
   test(`browser: ${label} changes dither output`, async ({ page }) => {
     const session = await prepareDither(page);
+    await seekDitherPhase(page);
     await setDitherSwitch(page, "pointer.enabled", true);
     let useEnd = false;
     const mutate = async (id: string) => {

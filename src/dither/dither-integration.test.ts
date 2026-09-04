@@ -38,8 +38,8 @@ describe("dither integration", () => {
     expect(pins[0].position.x).toBe("0");
   });
 
-  it.each([0.1, 0.65, 1, 1.75, 3])("stitches the actual near-end frame at fractional shimmer speed %s", (speed) => {
-    const settings = readDynamicSettings({ "motion.shimmer.speed": speed }, 320, 180, 0, false);
+  it.each([0.1, 0.65, 1, 1.75, 3])("stitches the actual near-end frame at fractional flicker speed %s", (speed) => {
+    const settings = readDynamicSettings({ "motion.flicker.speed": speed }, 320, 180, 0, false);
     for (const point of [[3,11], [70,23], [151,109]]) {
       const start = getDynamicCell(point[0], point[1], settings);
       const end = getDynamicCell(point[0], point[1], { ...settings, timelineProgress: 1 - 1e-8 });
@@ -52,7 +52,7 @@ describe("dither integration", () => {
     const field = { width: 2, height: 1, pixelSize: 2, mask: new Uint8Array([1,1]), tone: new Float32Array([255,255]) };
     const paints: unknown[][] = [];
     const context = { clearRect: vi.fn(), fillRect: (...args: unknown[]) => paints.push(args), fillStyle: "" } as unknown as CanvasRenderingContext2D;
-    renderDitherFrame(context, field, 4, 2, readDynamicSettings({ "motion.shimmer.enabled": false, "motion.breathing.enabled": false }, 4, 2, 0, false), false);
+    renderDitherFrame(context, field, 4, 2, readDynamicSettings({ "motion.flicker.enabled": false, "motion.breathing.enabled": false }, 4, 2, 0, false), false);
     expect(context.clearRect).not.toHaveBeenCalled();
     expect(paints).toEqual([[0.18000000000000005,0.18000000000000005,1.64,1.64],[2.18,0.18000000000000005,1.64,1.64]]);
   });

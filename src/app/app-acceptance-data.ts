@@ -15,7 +15,7 @@ export const appTransferMode: ToolcraftTransferMode = {
   animationIntent: {
     loopDuration: {
       evidence:
-        "A 7.2-second cycle keeps shimmer drift and the double pin pulse seamless without reversing direction.",
+        "A 7.2-second cycle keeps flicker drift and the double pin pulse seamless without reversing direction.",
       seconds: 7.2,
       source: "product-derived",
     },
@@ -81,7 +81,7 @@ export const appProductReadiness: ToolcraftProductReadiness = {
   productSummary:
     "A desktop image studio for monochrome dithering, animated highlights, pointer fields, and pulsing pins.",
   requestedBehavior:
-    "Import JPG or PNG images, tune tone and dithering, animate shimmer and pins, interact with the canvas, and export PNG, MP4, or portable settings JSON.",
+    "Import JPG or PNG images, tune tone and dithering, animate flicker and pins, interact with the canvas, and export PNG, MP4, or portable settings JSON.",
   viewInteraction: {
     mode: "non-spatial",
     reason: "The product edits a two-dimensional raster image without a 3D camera or model.",
@@ -150,12 +150,11 @@ const controlRows: ToolcraftComponentAcceptance[] = [
   controlAcceptance("dither.pixel-size", "dither.pixelSize", "slider", "Pixel size"),
   controlAcceptance("dither.threshold", "dither.threshold", "slider", "Threshold"),
   controlAcceptance("dither.invert", "dither.invert", "switch", "Invert"),
-  controlAcceptance("dither.ink", "dither.ink", "color", "Ink"),
-  controlAcceptance("motion.shimmer", "motion.shimmer.enabled", "switch", "Shimmer"),
-  controlAcceptance("motion.shimmer-color", "motion.shimmer.color", "color", "Shimmer color"),
-  controlAcceptance("motion.shimmer-amount", "motion.shimmer.amount", "slider", "Shimmer amount"),
-  controlAcceptance("motion.shimmer-speed", "motion.shimmer.speed", "slider", "Shimmer speed", {
-    expectedObservable: "Drift profile redistributes shimmer velocity through one forward cycle; timeline duration controls the overall speed.",
+  controlAcceptance("dither.ink", "dither.ink", "color", "Particle color"),
+  controlAcceptance("motion.flicker", "motion.flicker.enabled", "switch", "Flicker"),
+  controlAcceptance("motion.flicker-amount", "motion.flicker.amount", "slider", "Flicker amount"),
+  controlAcceptance("motion.flicker-speed", "motion.flicker.speed", "slider", "Flicker speed", {
+    expectedObservable: "Speed changes independent opacity fade frequency while preserving the seamless timeline loop.",
   }),
   controlAcceptance("motion.breathing", "motion.breathing.enabled", "switch", "Breathing"),
   controlAcceptance("motion.breathing-amount", "motion.breathing.amount", "slider", "Breathing amount"),
@@ -163,6 +162,9 @@ const controlRows: ToolcraftComponentAcceptance[] = [
   controlAcceptance("pointer.radius", "pointer.radius", "slider", "Pointer radius"),
   controlAcceptance("pointer.strength", "pointer.strength", "slider", "Pointer strength"),
   controlAcceptance("pointer.decay", "pointer.decay", "slider", "Pointer decay"),
+  controlAcceptance("pointer.speed", "pointer.speed", "slider", "Pointer speed"),
+  controlAcceptance("pointer.softness", "pointer.softness", "slider", "Pointer softness"),
+  controlAcceptance("pointer.size", "pointer.size", "slider", "Pointer size"),
   controlAcceptance("pins.items", "pins.items", "collectionActions", "Pins", {
     browser: { ...browser("browser: Pins changes dither output"), file: "e2e/product-dither-pins.spec.ts" },
     controlPartCoverage: [
@@ -394,12 +396,12 @@ export const appControlSectionInventory = [
     entity: "Dither motion",
     entityId: "dither-motion",
     finiteSelectors: [
-      { affectedTargets: [], reason: "Shimmer gates its color, amount, and speed dependents.", role: "branch", target: "motion.shimmer.enabled" },
+      { affectedTargets: [], reason: "Flicker gates its variation and speed dependents.", role: "branch", target: "motion.flicker.enabled" },
       { affectedTargets: [], reason: "Breathing gates its amount dependent.", role: "branch", target: "motion.breathing.enabled" },
     ],
-    groupingReason: "Shimmer and breathing animate the same dither field through runtime timeline time.",
+    groupingReason: "Flicker and breathing animate the same dither field through runtime timeline time.",
     id: "motion",
-    targets: ["motion.shimmer.enabled", "motion.shimmer.color", "motion.shimmer.amount", "motion.shimmer.speed", "motion.breathing.enabled", "motion.breathing.amount"],
+    targets: ["motion.flicker.enabled", "motion.flicker.amount", "motion.flicker.speed", "motion.breathing.enabled", "motion.breathing.amount"],
     title: "Motion",
   },
   {
@@ -410,7 +412,7 @@ export const appControlSectionInventory = [
     ],
     groupingReason: "Availability and field parameters jointly define pointer influence.",
     id: "pointer",
-    targets: ["pointer.enabled", "pointer.radius", "pointer.strength", "pointer.decay"],
+    targets: ["pointer.enabled", "pointer.radius", "pointer.strength", "pointer.decay", "pointer.speed", "pointer.softness", "pointer.size"],
     title: "Pointer",
   },
   {

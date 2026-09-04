@@ -9,10 +9,10 @@ const dynamics: DynamicDitherSettings = {
   ink: "#ffffff",
   pins: [{ bloom: 40, color: "#ff0000", core: 5, intensity: 1, position: { x: 10, y: 10 }, pulse: "double" }],
   pointer: { active: true, radius: 20, strength: 0.5, x: 10, y: 10 },
-  shimmerAmount: 0.4,
-  shimmerColor: "#00ff00",
-  shimmerEnabled: true,
-  shimmerSpeed: 1,
+  flickerAmount: 0.4,
+
+  flickerEnabled: true,
+  flickerSpeed: 1,
   timelineProgress: 0,
 };
 

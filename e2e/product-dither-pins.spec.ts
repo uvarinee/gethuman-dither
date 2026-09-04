@@ -2,12 +2,13 @@ import { expect, test } from "./toolcraft-product-test";
 import { readToolcraftBrowserObservation } from "./browser-proof-session";
 import { expectToolcraftCompoundControlPartOutcome } from "./browser-state-evidence-helpers";
 import { expectToolcraftProductObservableToChange } from "./product-observable-helpers";
-import { ditherOutput, prepareDitherPhase } from "./product-dither-helpers";
+import { ditherOutput, prepareDither, seekDitherPhase } from "./product-dither-helpers";
 import { provePinExportClean } from "./product-dither-export-helpers";
 import { dragCanvasHandle, expectCanvasHandlesUseToolcraftVisualLanguage } from "./canvas-handle-helpers";
 
 test("browser: Pins changes dither output", async ({ page }) => {
-  const session = await prepareDitherPhase(page);
+  const session = await prepareDither(page);
+    await seekDitherPhase(page);
   const observe = session.observe(root => ({
     count: root.querySelectorAll('[data-testid="dither-pin-handle"]').length,
     pixels: root.querySelector<HTMLCanvasElement>('canvas[data-dither-output]')!.toDataURL(),
@@ -37,7 +38,8 @@ test("browser: Pins changes dither output", async ({ page }) => {
 });
 
 test("browser: pin record fields affect its own highlight", async ({ page }) => {
-  const session = await prepareDitherPhase(page);
+  const session = await prepareDither(page);
+    await seekDitherPhase(page);
   for (const name of ["Core", "Bloom", "Intensity"]) {
     await expectToolcraftProductObservableToChange(session,
       session.controlAction("pins.items", async () => page.getByRole("slider", { name, exact: true }).press("End")),
@@ -49,7 +51,8 @@ test("browser: pin record fields affect its own highlight", async ({ page }) => 
 });
 
 test("browser: canvas pin drag updates its normalized position", async ({ page }) => {
-  const session = await prepareDitherPhase(page);
+  const session = await prepareDither(page);
+    await seekDitherPhase(page);
   await expectCanvasHandlesUseToolcraftVisualLanguage(page);
   await expectToolcraftProductObservableToChange(session,
     session.targetAction("pins.items", async () => dragCanvasHandle(page, "dither-pin-handle", { x: 46, y: 28 }, { requirementId: "pins.drag", target: "pins.items" })),
@@ -58,7 +61,8 @@ test("browser: canvas pin drag updates its normalized position", async ({ page }
 });
 
 test("browser: precise pin coordinates preserve the sibling pin", async ({ page }) => {
-  const session = await prepareDitherPhase(page);
+  const session = await prepareDither(page);
+    await seekDitherPhase(page);
   await page.getByRole("button", { name: "Add Pin", exact: true }).click();
   const handles = page.getByTestId("dither-pin-handle");
   await expect(handles).toHaveCount(2);

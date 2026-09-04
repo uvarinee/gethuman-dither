@@ -67,9 +67,9 @@ export function readDynamicSettings(values: Record<string, unknown>, width: numb
     breathingAmount: numberValue(values["motion.breathing.amount"], 0.08), breathingEnabled: booleanValue(values["motion.breathing.enabled"], true),
     includeBackground, ink: stringValue(values["dither.ink"], "#F4F1EA"),
     pins: parsePins(values["pins.items"], width, height, 1),
-    pointer: { active: booleanValue(values["pointer.enabled"], true) && pointer.active, radius: numberValue(values["pointer.radius"], 180), strength: numberValue(values["pointer.strength"], 0.55) * pointer.energy, x: pointer.x, y: pointer.y },
-    shimmerAmount: numberValue(values["motion.shimmer.amount"], 0.28), shimmerColor: stringValue(values["motion.shimmer.color"], "#FF4F2E"),
-    shimmerEnabled: booleanValue(values["motion.shimmer.enabled"], true), shimmerSpeed: numberValue(values["motion.shimmer.speed"], 0.65), timelineProgress,
+    pointer: { active: booleanValue(values["pointer.enabled"], true) && pointer.active, radius: numberValue(values["pointer.radius"], 180), strength: numberValue(values["pointer.strength"], 0.55), energy: pointer.energy, x: pointer.x, y: pointer.y, speed: numberValue(values["pointer.speed"], 3), softness: numberValue(values["pointer.softness"], 0.65), size: numberValue(values["pointer.size"], 0.2) },
+    flickerAmount: numberValue(values["motion.flicker.amount"], 0.65),
+    flickerEnabled: booleanValue(values["motion.flicker.enabled"], true), flickerSpeed: numberValue(values["motion.flicker.speed"], 1), timelineProgress,
   };
 }
 

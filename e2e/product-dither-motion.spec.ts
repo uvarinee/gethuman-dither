@@ -4,18 +4,18 @@ import { appControlSectionInventory } from "../src/app/app-acceptance-data";
 import { getToolcraftControlApplicabilityCases, getToolcraftApplicabilityRequirementId } from "../src/app/app-acceptance";
 import { expectToolcraftControlApplicabilityState } from "./browser-control-applicability-evidence";
 import { expectToolcraftProductObservableToChange } from "./product-observable-helpers";
-import { ditherOutput, prepareDitherPhase, setDitherSwitch, startDitherSliderDrag } from "./product-dither-helpers";
+import { ditherOutput, prepareDither, seekDitherPhase, setDitherSwitch, startDitherSliderDrag } from "./product-dither-helpers";
 
 const controls = [
-  ["Shimmer color", "motion.shimmer.color", "motion.shimmer-color", "color"],
-  ["Shimmer amount", "motion.shimmer.amount", "motion.shimmer-amount", "slider"],
-  ["Shimmer speed", "motion.shimmer.speed", "motion.shimmer-speed", "slider"],
+  ["Flicker amount", "motion.flicker.amount", "motion.flicker-amount", "slider"],
+  ["Flicker speed", "motion.flicker.speed", "motion.flicker-speed", "slider"],
   ["Breathing amount", "motion.breathing.amount", "motion.breathing-amount", "slider"],
 ] as const;
 
 for (const [label, target, requirementId, kind] of controls) {
   test(`browser: ${label} changes dither output`, async ({ page }) => {
-    const session = await prepareDitherPhase(page);
+    const session = await prepareDither(page);
+    await seekDitherPhase(page);
     let alternate = false;
     const mutate = async (id: string) => {
       alternate = !alternate;
@@ -42,11 +42,12 @@ for (const [label, target, requirementId, kind] of controls) {
 }
 
 for (const [label, target, requirementId] of [
-  ["Shimmer", "motion.shimmer.enabled", "motion.shimmer"],
+  ["Flicker", "motion.flicker.enabled", "motion.flicker"],
   ["Breathing", "motion.breathing.enabled", "motion.breathing"],
 ] as const) {
   test(`browser: ${label} changes dither output`, async ({ page }) => {
-    const session = await prepareDitherPhase(page);
+    const session = await prepareDither(page);
+    await seekDitherPhase(page);
     await expectToolcraftProductObservableToChange(session,
       session.controlAction(target, async field => field.getByRole("switch").click()),
       { requirementId, selector: ditherOutput });

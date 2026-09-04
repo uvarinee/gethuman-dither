@@ -28,6 +28,27 @@ Schema, raster rendering, pin interaction and runtime export composition are int
 - Functional scope: First delivery means functional proof only, no measured performance or full audit. The first-delivery classification is recorded in the approved implementation plan. Focused unit and Playwright scenarios have passed; protected reporters/receipts own final results.
 - Risks: Functional acceptance is incomplete; desktop host geometry and embedded browser availability have concrete limitations below. Deferred renderer comparisons are not performance certification.
 
+### Iteration 2 — Particle appearance and pointer refinement
+
+- Request: Replace striped Shimmer with independent random particle disappearance/reappearance; expose particle color, fade speed/weight and local hover acceleration, raised surface, size and soft radius, changing nothing else.
+- Task type: Bounded product renderer/control refinement; not performance work or upstream repair.
+- Source/reference checked: `https://www.gethuman.md/sapien.html` render source and the user's static screenshot. The reference modulates luminance before Bayer thresholding; the user explicitly requests independent opacity noise instead.
+- Reference inputs: Static screenshot and reference webpage source; no supplied motion media, `referenceInputs: []`.
+- Docs/contracts read: workflow, core control-selection/layout/runtime-boundary/performance/timeline-animation; schema-reference, component-rules, renderer-technique, decision-contract, performance and acceptance-testing.
+- Contract rules applied: runtime-shell-required, controls-product-coverage, controls-section-inventory-required, timeline-enabled-behavior, acceptance-product-observable, performance-coverage-levels.
+- User-visible result: Particle color, independent opacity Flicker and a tunable soft hover lens replace the previous striped color shimmer.
+- View interaction intent: Non-spatial, unchanged 2D scene.
+- Decision: Preserve `dither.ink` as Particle color; replace removed shimmer targets with `motion.flicker.*`. Retain existing pins/breathing/source/timeline/export. Use seeded circular noise and a soft radial lens in the existing shared renderer; no new buffers, dependencies or source-cache invalidation.
+- Interaction ownership: Transient hover stays canvas-owned; global field tuning stays in built-in panel controls. Non-spatial view remains unchanged.
+- Alternatives rejected: Moving color bands, cursor brightening, image blur buffers, a new animation clock, renderer replacement and unrelated UI changes.
+- State/output mapping: Flicker amount controls opacity depth, speed controls noise event frequency, pointer speed blends a faster local track, strength raises/displaces the surface, size changes dot size and softness shapes the radius edge. Pointer never adds color or brightness.
+- Verification scope: Focused math, schema, renderer/export integration and exact affected browser acceptance only. No aggregate delivery/build, measured performance or audit. The old signed Windows gate failure remains outside this user request.
+- Performance intent: ordinary-product-work
+- Verification: npm run verify:delivery
+- Browser capability: Embedded controller failed to start; reference source was read via HTTP and real browser proof uses headless Playwright.
+- Focused result: 44 targeted unit tests passed. All eleven changed control scenarios and the runtime timeline scenario passed; the color scenario was rerun alone after a cold-navigation interruption. A separate small PNG/MP4 test passed with breathing/pins disabled, proving colored particles and independently changing fade frames with thirty encoded packets. Screenshot inspected. No aggregate gate or measured performance was run.
+- Risks: Previous shimmer settings are intentionally retired rather than reinterpreted as flicker. Other runtime targets/media references are preserved. This is a functional refinement, not full-delivery certification.
+
 ## Decisions
 
 ### Renderer
@@ -52,7 +73,7 @@ Schema, raster rendering, pin interaction and runtime export composition are int
 
 - Decision: Runtime playback, default 7.2-second seamless forward cycle.
 - Reason: Authored animation and requested MP4 need one transport and fixed export schedule.
-- Evidence: Schema/animation intent and shared loop progress. Drift profile redistributes velocity within one cycle; timeline duration controls overall speed.
+- Evidence: Schema/animation intent and shared loop progress. Independent seeded opacity tracks close at the loop boundary; Flicker speed changes event frequency and timeline duration controls the complete cycle length.
 
 ### Layers
 
