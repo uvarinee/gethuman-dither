@@ -160,13 +160,16 @@ const controlRows: ToolcraftComponentAcceptance[] = [
   controlAcceptance("motion.breathing-amount", "motion.breathing.amount", "slider", "Breathing amount"),
   controlAcceptance("pointer.enabled", "pointer.enabled", "switch", "Pointer response"),
   controlAcceptance("pointer.radius", "pointer.radius", "slider", "Pointer radius"),
-  controlAcceptance("pointer.strength", "pointer.strength", "slider", "Pointer strength"),
+  controlAcceptance("pointer.strength", "pointer.strength", "slider", "Pointer strength", {
+    expectedObservable: "Strength reveals additional source-weighted grid cells near the cursor without moving their centers; zero restores the unhovered field.",
+  }),
   controlAcceptance("pointer.decay", "pointer.decay", "slider", "Pointer decay"),
   controlAcceptance("pointer.speed", "pointer.speed", "slider", "Pointer speed"),
   controlAcceptance("pointer.softness", "pointer.softness", "slider", "Pointer softness"),
   controlAcceptance("pointer.size", "pointer.size", "slider", "Pointer size"),
   controlAcceptance("pins.items", "pins.items", "collectionActions", "Pins", {
-    browser: { ...browser("browser: Pins changes dither output"), file: "e2e/product-dither-pins.spec.ts" },
+    browser: { ...browser("browser: Pins changes dither output"), file: "e2e/product-dither-pin-paint.spec.ts" },
+    expectedObservable: "Each pin paints individual cells with a soft color falloff while preserving their size, centers and background gaps.",
     controlPartCoverage: [
       "collectionActions.add",
       "collectionActions.remove",
@@ -410,7 +413,7 @@ export const appControlSectionInventory = [
     finiteSelectors: [
       { affectedTargets: [], reason: "Response gates radius, strength, and decay dependents.", role: "branch", target: "pointer.enabled" },
     ],
-    groupingReason: "Availability and field parameters jointly define pointer influence.",
+    groupingReason: "Availability, reveal strength and edge/size parameters define one grid-aligned cursor paint field.",
     id: "pointer",
     targets: ["pointer.enabled", "pointer.radius", "pointer.strength", "pointer.decay", "pointer.speed", "pointer.softness", "pointer.size"],
     title: "Pointer",

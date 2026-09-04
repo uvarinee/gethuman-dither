@@ -49,11 +49,32 @@ Schema, raster rendering, pin interaction and runtime export composition are int
 - Focused result: 44 targeted unit tests passed. All eleven changed control scenarios and the runtime timeline scenario passed; the color scenario was rerun alone after a cold-navigation interruption. A separate small PNG/MP4 test passed with breathing/pins disabled, proving colored particles and independently changing fade frames with thirty encoded packets. Screenshot inspected. No aggregate gate or measured performance was run.
 - Risks: Previous shimmer settings are intentionally retired rather than reinterpreted as flicker. Other runtime targets/media references are preserved. This is a functional refinement, not full-delivery certification.
 
+### Iteration 3 — Pointer reveal and Point cell paint
+
+- Request: Implement both approved changes: hover like the supplied light-cell patch and Point color applied directly to particles, with a soft edge rather than an overlaid glow.
+- Task type: Later focused renderer/control refinement in branch feat/pointer-hover; ordinary product work.
+- User-visible result: Pointer reveals additional source-weighted cells with an organic contour, fixed centers and soft decay. Point colors cells with a smooth radial falloff and does not enlarge particles or paint grid gaps. Bulge is now Strength; Bloom is now Blur.
+- Source/reference checked: The two user screenshots (codex-clipboard-8dd9c2e1-afb6-4dac-814e-0f80e07da68e.png and codex-clipboard-689324eb-5e51-4649-adae-ea095d8d3101.png), https://shaders.evilrabbit.com/#dither, current renderer, scene settings, schema and product proof helpers. This is an explicit redesign of existing effects, not a complete reference-runtime port.
+- Reference inputs: Two static PNGs and a webpage; no supplied video/GIF/sequence. referenceInputs remains [] and no motion preprocessing applies.
+- Docs/contracts read: workflow; core reference-study, runtime-boundary, control-selection, layout, performance; assembly-workflow, schema-reference, component-rules, decision-contract, renderer-technique, performance and acceptance-testing. Applied brainstorming, writing-plans, browser and systematic-debugging workflows.
+- Contract rules applied: runtime-shell-required, canvas-no-app-ui, canvas-surface-preserved, interaction-surface-ownership, controls-product-coverage, controls-section-inventory-required, acceptance-product-observable, performance-coverage-levels, workflow-required.
+- View interaction intent: non-spatial; unchanged two-dimensional raster and no orientation targets.
+- Interaction ownership: Canvas owns transient hover and direct Point dragging. Panel owns built-in parameter, exact-position and collection edits. Existing target/value shapes remain compatible with runtime persistence, reset and settings transfer.
+- Decision: Use deterministic scalar per-cell math in the existing shared Canvas 2D renderer. Source tone gates additional hover cells, including inverted sources; a fixed grid threshold produces gradual reveal/decay. Local faster Flicker can add visibility but cannot darken an originally visible particle. Point Blur is a smooth color-weight falloff; no separate image blur or glow layer is created.
+- Alternatives rejected: Blurred overlay, displaced grid, Point enlargement, new animation clock, GPU/runtime replacement and unrelated canvas/export changes.
+- State/output mapping: pointer.strength drives reveal and visibility; pointer.radius/softness define the field, pointer.size is bounded cell fill, pointer.speed adds local Flicker and pointer.decay returns to idle. pins.items color/core/bloom/intensity/pulse affect only color/visibility in the shared preview/export cell function. Runtime still owns export, media and storage; source caches and viewport coalescing remain unchanged.
+- Performance intent: ordinary-product-work
+- Verification tier: Tier 3, focused changed-feature proof. Pre-edit structural assessment passed (5 tests). The 31 directly relevant renderer/Pointer/Point/export unit tests passed across the focused runs. All seven Pointer browser scenarios passed; pins.items passed on its isolated rerun after correcting the compound-field locator. TypeScript compatibility check passed for the new renderer result and collection descriptions. No aggregate delivery/build, benchmark or measured performance was run.
+- Verification: npm run test:feature selected the seven pointer.* control IDs and pins.items. Semantic checks prove added local cells, exact idle restoration, identical distant cells/gaps, saturated Point cells and unchanged cell occupancy/gaps. Blur was exercised through a real held mouse drag and its output was asserted before release. Reviewed pointer-cell-paint.png and point-cell-paint.png diagnostics. npm run dev confirmed the existing local app at http://127.0.0.1:3002/. The historical signed Windows first-delivery path assertion remains outside this request.
+- Browser capability: The embedded controller still fails at startup with helper_unknown_error: apply deny-read ACLs. Headless Chromium is available for real UI proof and diagnostic screenshots. Initial reference capture loaded the controls but did not yet show the product canvas; no timing/parity claim is made.
+- Proof organization: The initial selected run was blocked by a pre-existing export-clean helper authority diagnostic imported by the shared pin spec. Cell-paint acceptance now has a focused product-owned spec without that unrelated export/drag import; the protected validator and the position/export checks are preserved.
+- Risks: Focused functional proof passed. Exact live-reference motion timing remains unverified because the fallback reference capture showed its shell with an empty product canvas. Existing first-delivery/runtime platform limitations remain unchanged; no performance certification is claimed.
+
 ## Decisions
 
 ### Renderer
 
-- Decision: Intentionally rasterized Canvas 2D, cached source/tone/dither stages and evaluated dynamic presentation.
+- Decision: Intentionally rasterized Canvas 2D, cached source/tone/dither stages and evaluated dynamic cell presentation. Hover reveals fixed-grid cells; Points paint their colors without enlarging them.
 - Reason: The requested output is a pixel field over source images with deterministic preview/export semantics.
 - Evidence: `src/dither`, canonical `app-performance.ts` pipeline, algorithm/integration tests and real output acceptance.
 

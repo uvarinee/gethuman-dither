@@ -5,6 +5,7 @@ import { getToolcraftControlApplicabilityCases, getToolcraftApplicabilityRequire
 import { getToolcraftControlFieldByTarget } from "./browser-control-target-helpers";
 import { expectToolcraftControlApplicabilityState } from "./browser-control-applicability-evidence";
 import { expectToolcraftProductObservableToChange, getToolcraftProductObservableSnapshot } from "./product-observable-helpers";
+import { prepareCellPaint, readCellPaint, paintedCellCount } from "./product-dither-cell-paint-helpers";
 import { ditherOutput, prepareDither, seekDitherPhase, setDitherSwitch } from "./product-dither-helpers";
 
 async function hoverField(page: import("@playwright/test").Page) {
@@ -15,11 +16,27 @@ async function hoverField(page: import("@playwright/test").Page) {
 
 test("browser: Pointer response changes dither output", async ({ page }) => {
   const session = await prepareDither(page);
+  await prepareCellPaint(page);
+  await page.getByRole("button", { name: "Remove Pin", exact: true }).click();
   await setDitherSwitch(page, "pointer.enabled", true);
-  await hoverField(page);
+  for (const [target, key] of [["pointer.radius", "Home"], ["pointer.strength", "End"], ["pointer.size", "Home"], ["pointer.decay", "Home"]]) {
+    await (await getToolcraftControlFieldByTarget(page, target)).getByRole("slider").press(key);
+  }
+  await setDitherSwitch(page, "pointer.enabled", false);
+  const toggle = (await getToolcraftControlFieldByTarget(page, "pointer.enabled")).getByRole("switch");
+  await toggle.focus();
+  const idle = await readCellPaint(page);
   await expectToolcraftProductObservableToChange(session,
-    session.controlAction("pointer.enabled", async field => { await field.getByRole("switch").focus(); await field.getByRole("switch").press("Space"); }),
+    session.controlAction("pointer.enabled", async () => { await toggle.press("Space"); await hoverField(page); }),
     { requirementId: "pointer.enabled", selector: ditherOutput });
+  const hover = await readCellPaint(page);
+  expect(paintedCellCount(hover)).toBeGreaterThan(paintedCellCount(idle));
+  expect(hover.gaps).toEqual(idle.gaps);
+  const farCells = (grid: typeof idle) => grid.cells.filter((_, i) => i % grid.columns < grid.columns * 0.25);
+  expect(farCells(hover)).toEqual(farCells(idle));
+  await page.locator(ditherOutput).screenshot({ path: ".toolcraft/browser-artifacts/pointer-cell-paint.png" });
+  await page.mouse.move(1, 1);
+  await expect.poll(() => readCellPaint(page)).toEqual(idle);
 });
 
 for (const [label, target, requirementId] of [

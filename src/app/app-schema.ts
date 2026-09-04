@@ -277,8 +277,8 @@ export const appSchema = defineToolcraft({
             strength: {
               applicability: whenEnabled("pointer.enabled"),
               defaultValue: 0.55,
-              label: "Bulge",
-              description: "Raises and expands the particle surface under the cursor without brightening its color.",
+              label: "Strength",
+              description: "Reveals more cells and restores particle visibility near the cursor while keeping the grid fixed.",
               max: 1,
               min: 0,
               performanceRole: "responsiveness",
@@ -319,7 +319,7 @@ export const appSchema = defineToolcraft({
               applicability: whenEnabled("pointer.enabled"),
               defaultValue: 0.2,
               label: "Particle size",
-              description: "Additional particle enlargement inside the cursor field, independent of the surface bulge.",
+              description: "Fills more of each hovered cell while preserving its center and the gaps between particles.",
               min: 0, max: 1, step: 0.01, sliderValueKind: "continuous",
               performanceRole: "responsiveness", target: "pointer.size", type: "slider",
             },
@@ -355,6 +355,7 @@ export const appSchema = defineToolcraft({
                 core: {
                   defaultValue: 12,
                   label: "Core",
+                  description: "Radius of the fully weighted color region, measured across the particle grid.",
                   max: 64,
                   min: 2,
                   sliderValueKind: "continuous",
@@ -364,7 +365,8 @@ export const appSchema = defineToolcraft({
                 },
                 bloom: {
                   defaultValue: 48,
-                  label: "Bloom",
+                  label: "Blur",
+                  description: "Softens the color falloff across neighboring particles; the gaps stay unpainted.",
                   max: 220,
                   min: 8,
                   sliderValueKind: "continuous",

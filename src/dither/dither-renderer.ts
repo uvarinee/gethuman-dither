@@ -8,9 +8,11 @@ import {
   type ToneSettings,
 } from "./dither-algorithms";
 import { assertDitherWorkload } from "./dither-limits";
-import { particleFlicker, pointerEnvelope } from "./dither-flicker";
+import { particleFlicker } from "./dither-flicker";
+import { pointColorFalloff, pointerCellField, revealedCellOpacity } from "./dither-cell-paint";
 
 export type StaticDitherField = Readonly<{
+  inverted?: boolean;
   height: number;
   mask: Uint8Array;
   pixelSize: number;
@@ -95,6 +97,7 @@ export function buildDitherField(
   return {
     height,
     mask: ditherLuminance(tone, width, height, dither),
+    inverted: dither.invert,
     pixelSize: resolvedPixelSize,
     tone,
     width,
@@ -157,46 +160,43 @@ export function getDynamicCell(
   sceneX: number,
   sceneY: number,
   settings: DynamicDitherSettings,
-): Readonly<{ color: readonly [number, number, number]; scale: number; opacity: number; offsetX: number; offsetY: number }> {
+): Readonly<{ color: readonly [number, number, number]; scale: number; opacity: number; offsetX: number; offsetY: number; reveal: number }> {
   const progress = ((settings.timelineProgress % 1) + 1) % 1;
   let scale = settings.breathingEnabled
     ? 1 + Math.sin(progress * TAU) * settings.breathingAmount
     : 1;
   let color = parseHexColor(settings.ink);
 
-  let influence = 0;
-  let offsetX = 0;
-  let offsetY = 0;
-  if (settings.pointer.active) {
-    const dx = sceneX - settings.pointer.x;
-    const dy = sceneY - settings.pointer.y;
-    influence = pointerEnvelope(Math.hypot(dx, dy), settings.pointer.radius, settings.pointer.softness ?? 0.65) * (settings.pointer.energy ?? 1);
-    const raised = influence * settings.pointer.strength;
-    offsetX = dx * raised * 0.28;
-    offsetY = dy * raised * 0.28 - settings.pointer.radius * raised * 0.12;
-    scale += raised * 0.25 + influence * (settings.pointer.size ?? 0.2);
-  }
+  const pointer = settings.pointer;
+  const influence = pointer.active
+    ? pointerCellField(sceneX, sceneY, pointer.x, pointer.y, pointer.radius, pointer.softness ?? 0.65)
+      * clamp01(pointer.energy ?? 1) * clamp01(pointer.strength)
+    : 0;
+  // Hover can fill more of a cell, but never move it or close its grid gap.
+  scale += influence * clamp01(pointer.size ?? 0.2) * Math.max(0, 1.16 - scale);
 
   let opacity = 1;
   if (settings.flickerEnabled) {
     const ambient = particleFlicker(sceneX, sceneY, progress, settings.flickerSpeed);
     const fast = influence > 0 ? particleFlicker(sceneX, sceneY, progress, settings.flickerSpeed * (settings.pointer.speed ?? 3)) : ambient;
-    opacity = 1 - clamp01(settings.flickerAmount) * (1 - (ambient + (fast - ambient) * influence));
+    // Local flicker adds visibility; a phase change must never darken a hovered cell.
+    const visible = ambient + Math.max(0, fast - ambient) * influence;
+    opacity = 1 - clamp01(settings.flickerAmount) * (1 - visible);
   }
+
+  opacity += (1 - opacity) * influence;
 
   for (const pin of settings.pins) {
     const distance = Math.hypot(sceneX - pin.position.x, sceneY - pin.position.y);
-    const radial = distance <= pin.core
-      ? 1
-      : 1 - clamp01((distance - pin.core) / Math.max(1, pin.bloom));
-    const influence = radial * pin.intensity * (0.55 + pulseAt(progress, pin.pulse) * 0.45);
+    const radial = pointColorFalloff(distance, pin.core, pin.bloom);
+    const influence = radial * clamp01(pin.intensity) * (0.55 + pulseAt(progress, pin.pulse) * 0.45);
     if (influence <= 0) continue;
     const pinColor = parseHexColor(pin.color);
     color = color.map((channel, index) => Math.round(channel + (pinColor[index] - channel) * influence)) as unknown as readonly [number, number, number];
-    scale += influence * 0.65;
+    opacity += (1 - opacity) * influence;
   }
 
-  return { color, scale: Math.max(0.08, scale), opacity, offsetX, offsetY };
+  return { color, scale: Math.max(0.08, scale), opacity, offsetX: 0, offsetY: 0, reveal: influence };
 }
 
 export function renderDitherFrame(
@@ -218,14 +218,18 @@ export function renderDitherFrame(
   for (let y = 0; y < field.height; y += 1) {
     for (let x = 0; x < field.width; x += 1) {
       const index = y * field.width + x;
-      if (field.mask[index] === 0) continue;
       const centerX = (x + 0.5) * cellWidth;
       const centerY = (y + 0.5) * cellHeight;
+      const empty = field.mask[index] === 0;
+      if (empty && (!settings.pointer.active || settings.pointer.strength <= 0
+        || Math.hypot(centerX - settings.pointer.x, centerY - settings.pointer.y) >= settings.pointer.radius)) continue;
       const dynamic = getDynamicCell(centerX, centerY, settings);
+      const coverage = empty ? revealedCellOpacity(x, y, field.tone[index], dynamic.reveal, field.inverted) : 1;
+      if (coverage <= 0) continue;
       const drawWidth = Math.max(1, cellWidth * 0.82 * dynamic.scale);
       const drawHeight = Math.max(1, cellHeight * 0.82 * dynamic.scale);
       context.fillStyle = `rgb(${dynamic.color[0]} ${dynamic.color[1]} ${dynamic.color[2]})`;
-      context.globalAlpha = originalAlpha * dynamic.opacity;
+      context.globalAlpha = originalAlpha * dynamic.opacity * coverage;
       context.fillRect(centerX + dynamic.offsetX - drawWidth / 2, centerY + dynamic.offsetY - drawHeight / 2, drawWidth, drawHeight);
     }
   }

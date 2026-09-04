@@ -11,7 +11,7 @@ for (const [label, values] of [
   it(`${label} changes dither output`, () => {
     const baseline = getDynamicCell(150, 80, readDynamicSettings({}, 320, 180, 0, true, pointer));
     const changed = getDynamicCell(150, 80, readDynamicSettings(values, 320, 180, 0, true, pointer));
-    expect(changed.scale).toBeLessThan(baseline.scale);
+    expect(changed.reveal).toBeLessThan(baseline.reveal);
   });
 }
 
@@ -41,5 +41,5 @@ it("Pointer decay changes dither output", () => {
   expect(slow.active).toBe(true);
   const faded = getDynamicCell(120, 80, readDynamicSettings({}, 320, 180, 0, true, fast));
   const retained = getDynamicCell(120, 80, readDynamicSettings({}, 320, 180, 0, true, slow));
-  expect(retained.scale).toBeGreaterThan(faded.scale);
+  expect(retained.reveal).toBeGreaterThan(faded.reveal);
 });
