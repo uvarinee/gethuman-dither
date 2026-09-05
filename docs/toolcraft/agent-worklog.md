@@ -90,11 +90,27 @@ Schema, raster rendering, pin interaction and runtime export composition are int
 - Performance intent: ordinary-product-work. Dynamic-field workload now declares actual sampled-cell cost; sparse simulation avoids storing inactive cells. No measured speedup or dense-image performance certification is claimed.
 - Remaining risks: Historical first-delivery Windows assertion and protected drag-helper authority diagnostic require upstream correction. Reference source mechanics are adapted; exact Version 3 motion parity is not certified.
 
+### Iteration 5 — Pin noise region and optional peripheral scatter
+
+- Request: Preserve the approved Pointer exactly; replace the Pin spider/star pulse with independent accent/base color rustle, optional soft edges, and adjustable peripheral spray without an empty center.
+- Task type: Later focused renderer/control redesign, ordinary product work on codex/stage-1-pointer-pins. Plan: docs/plans/2026-09-05-pin-noise-scatter.md.
+- Source/reference checked: User static screenshots codex-clipboard-c2501f35-a145-4ec2-9b99-bf971981f7ca.png and codex-clipboard-bad99b68-8508-4977-92b0-1dac2f7c17f9.png show tight and dispersed hover peripheries; user explicitly excludes the central hole. Existing approved Pointer and deterministic Motion noise are local sources. referenceInputs remains []: no supplied timed media.
+- User-visible result: Radius defines a Pin-local noise region; Color mix and Noise amount vary cells independently between source and accent colors. Noise speed follows the existing timeline and zero freezes the Pin. Soft edge fades region influence while keeping raster cells crisp. Scatter controls independent signed displacement growing toward the periphery; zero retains the exact grid. The center has zero displacement and no global pulse.
+- Docs/contracts: Existing conversation Plan routes for controls, renderer, timeline, reference and visual mismatch were retained; workflow and local brainstorming/writing-plans skills revisited, schema-reference and component-rules re-read before changes. Renderer/performance and acceptance-testing preflight from this conversation remains applicable. Rules: runtime-shell-required, interaction-surface-ownership, controls-product-coverage, controls-section-inventory-required, timeline-enabled-behavior, acceptance-product-observable, persistence-policy-explicit, performance-coverage-levels, workflow-required.
+- State/output mapping: Existing pins.items collection retains position/radius/color; retired phase fields are ignored and runtime defaults supply coverage/noise/speed/softness/scatter. Pin-local normalized coordinates seed independent looping color and XY tracks so backing-scale changes preserve the same noise. Shared preview/export renderer adds Pin displacement to existing Pointer offsets; Pointer simulation, settings, input handling and scheduling are unchanged.
+- Ownership: Non-spatial 2D scene unchanged. Canvas owns direct Pin dragging; built-in panel controls own precise coordinates and noise tuning. Runtime still owns media, persistence, settings transfer, transport and encoders. No new layer, panel, source cache, feedback buffer, dependency or GPU provider.
+- Alternatives rejected: Synchronized flash, radial star/spider front, central repulsion/hole, whole-image blur, duplicated particles and a separate clock. Soft edge is local influence attenuation, not a blurred image overlay.
+- Renderer/workload: Same canonical Canvas2D registration, sampling envelope and bounded Pin count; per-cell Pin sampling adds constant scalar noise work only inside the region, with no source-stage invalidation. Viewport/hidden suspension and export bounds are unchanged. Performance intent: ordinary-product-work; no measurement authority or certification.
+- Verification tier: Tier 3 later feature. Focused math/renderer/export/schema checks cover independent noise, zero scatter, intact center, spread scaling, seam continuity, backing-scale parity, exact outside-region preservation, old-record defaults, unchanged Pointer integrator and additive composition. Typecheck is relevant because DitherPin changed. No build, aggregate delivery, full audit or benchmark.
+- Focused results: 37 relevant unit tests passed across the Pin/Pointer, renderer, canvas projection, schema and export runs. TypeScript and whitespace checks passed. All nine selected browser scenarios passed: persistence.reload and seven Pointer controls in the first run, then pins.items in its focused rerun. The initial Pin scenario reached its final scatter assertion but exhausted 30 seconds; replacing repeated radius keypresses with the built-in numeric editor and removing diagnostic screenshots brought it under the unchanged budget (27.3 seconds). No product change or budget extension was needed.
+- Browser capability: Reattempted embedded CUA; Windows sandbox deny-read ACL startup failure persists. Headless Playwright provides real UI proof and diagnostics without changing the user's browser workspace. Inspected pin-noise-reference-ui.png on the existing hero reference.
+- Risks: This is a Pin redesign informed by stills, not exact timed reference parity. Existing historical signed Windows first-delivery and drag-helper authority limitations remain outside this change; neither signed component was patched.
+
 ## Decisions
 
 ### Renderer
 
-- Decision: Intentionally rasterized Canvas 2D, cached source/tone/dither stages and evaluated dynamic cell presentation. Pointer displaces existing cells with retained velocity and home return; Pins paint exact opaque colors with binary branching fronts and no radius falloff.
+- Decision: Intentionally rasterized Canvas 2D, cached source/tone/dither stages and evaluated dynamic cell presentation. Pointer displaces existing cells with retained velocity and home return; Pins use independent color noise and optional peripheral scatter, with configurable edge softness and no central repulsion.
 - Reason: The requested output is a pixel field over source images with deterministic preview/export semantics.
 - Evidence: `src/dither`, canonical `app-performance.ts` pipeline, algorithm/integration tests and real output acceptance.
 
@@ -126,7 +142,7 @@ Schema, raster rendering, pin interaction and runtime export composition are int
 
 - Decision: Built-in Source, Tone, Dither, Motion, Pointer, Pins and delivery sections with explicit applicability.
 - Reason: Canonical controls own reset/history/transfer; conditional branches hide unavailable parameters.
-- Evidence: Section inventory and scalar/compound/case-scoped pixel tests. Pointer tuning uses keyboard controls with a stationary canvas pointer. Pins expose Radius, Color, Flashes, Fill time, Hold time, Clear time and Branching; timing percentages apply to each flash and the remainder is the uncolored pause.
+- Evidence: Section inventory and scalar/compound/case-scoped pixel tests. Pointer tuning uses keyboard controls with a stationary canvas pointer. Pins expose Radius, Color, Color mix, Noise amount, Noise speed, Soft edge and Scatter; noise follows runtime loop progress, speed zero freezes it and scatter zero preserves the grid.
 
 ### Export
 

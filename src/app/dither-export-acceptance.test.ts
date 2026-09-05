@@ -49,9 +49,9 @@ describe("dither artifact frame semantics", () => {
   it("maps the canonical video schedule to changing deterministic product frames", () => {
     const schedule = createToolcraftVideoFrameSchedule(0.2);
     expect(schedule).toHaveLength(6);
-    const animated = { ...settings, pins: [{ color: "#FF4F2E", radius: 40, position: { x: 45, y: 45 }, flashes: 2, fill: 25, hold: 20, clear: 25, branches: 0.65 }] };
+    const animated = { ...settings, pins: [{ color: "#FF4F2E", radius: 40, position: { x: 45, y: 45 }, coverage: 0.55, noise: 0.85, speed: 1, softness: 0.25, scatter: 0.2 }] };
     const colors = schedule.map(({ timeSeconds }) => getDynamicCell(45, 45, { ...animated, timelineProgress: timeSeconds / 0.2 }).color.join(","));
-    expect(new Set(colors)).toEqual(new Set(["244,241,234", "255,79,46"]));
+    expect(new Set(colors).size).toBeGreaterThan(2);
     expect(getDynamicCell(45, 45, settings)).toEqual(getDynamicCell(45, 45, { ...settings, timelineProgress: 1 }));
   });
 });

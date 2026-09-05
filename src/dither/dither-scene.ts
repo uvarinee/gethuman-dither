@@ -30,11 +30,11 @@ export function parsePins(value: unknown, width: number, height: number, backing
       radius: numberValue(pin.radius, 100) * Math.max(0, backingScale),
       color: stringValue(pin.color, "#FF4F2E"),
       position: { x: (axis(position.x) + 1) * width / 2, y: (axis(position.y) + 1) * height / 2 },
-      flashes: Math.max(1, Math.min(8, Math.round(numberValue(pin.flashes, 2)))),
-      fill: Math.max(0, Math.min(30, numberValue(pin.fill, 25))),
-      hold: Math.max(0, Math.min(30, numberValue(pin.hold, 20))),
-      clear: Math.max(0, Math.min(30, numberValue(pin.clear, 25))),
-      branches: Math.max(0, Math.min(1, numberValue(pin.branches, 0.65))),
+      coverage: Math.max(0, Math.min(1, numberValue(pin.coverage, 0.55))),
+      noise: Math.max(0, Math.min(1, numberValue(pin.noise, 0.85))),
+      speed: Math.max(0, Math.min(4, numberValue(pin.speed, 1))),
+      softness: Math.max(0, Math.min(1, numberValue(pin.softness, 0.25))),
+      scatter: Math.max(0, Math.min(1, numberValue(pin.scatter, 0.2))),
     }];
   });
 }

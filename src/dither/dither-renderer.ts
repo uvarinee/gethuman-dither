@@ -9,7 +9,7 @@ import {
 } from "./dither-algorithms";
 import { assertDitherWorkload } from "./dither-limits";
 import { particleFlicker } from "./dither-flicker";
-import { pinCellIsColored, type DitherPin } from "./pin-animation";
+import { samplePin, type DitherPin } from "./pin-animation";
 import type { MovingCell, PointerForces } from "./pointer-physics";
 export type { DitherPin } from "./pin-animation";
 
@@ -157,13 +157,17 @@ export function getDynamicCell(
 
   let opacity = settings.flickerEnabled ? 1 - clamp01(settings.flickerAmount) * (1 - particleFlicker(sceneX, sceneY, progress, settings.flickerSpeed)) : 1;
 
+  let offsetX = 0, offsetY = 0;
   for (const pin of settings.pins) {
-    if (!pinCellIsColored(sceneX, sceneY, progress, pin)) continue;
-    color = parseHexColor(pin.color);
-    opacity = 1;
+    const sample = samplePin(sceneX, sceneY, progress, pin);
+    offsetX += sample.offsetX; offsetY += sample.offsetY;
+    if (sample.weight === 0) continue;
+    const accent = parseHexColor(pin.color);
+    color = [0, 1, 2].map(i => Math.round(color[i] + (accent[i] - color[i]) * sample.weight)) as [number, number, number];
+    opacity += (1 - opacity) * sample.weight;
   }
 
-  return { color, scale: Math.max(0.08, scale), opacity, offsetX: 0, offsetY: 0, reveal: 0 };
+  return { color, scale: Math.max(0.08, scale), opacity, offsetX, offsetY, reveal: 0 };
 }
 
 export function renderDitherFrame(
@@ -195,7 +199,7 @@ export function renderDitherFrame(
       const drawHeight = Math.max(1, cellHeight * 0.82 * dynamic.scale);
       context.fillStyle = `rgb(${dynamic.color[0]} ${dynamic.color[1]} ${dynamic.color[2]})`;
       context.globalAlpha = originalAlpha * dynamic.opacity;
-      context.fillRect(centerX + (offset?.x ?? 0) - drawWidth / 2, centerY + (offset?.y ?? 0) - drawHeight / 2, drawWidth, drawHeight);
+      context.fillRect(centerX + (offset?.x ?? 0) + dynamic.offsetX - drawWidth / 2, centerY + (offset?.y ?? 0) + dynamic.offsetY - drawHeight / 2, drawWidth, drawHeight);
     }
   }
   context.globalAlpha = originalAlpha;

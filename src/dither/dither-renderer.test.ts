@@ -7,7 +7,7 @@ const dynamics: DynamicDitherSettings = {
   breathingEnabled: true,
   includeBackground: true,
   ink: "#ffffff",
-  pins: [{ radius: 40, color: "#ff0000", flashes: 2, fill: 25, hold: 20, clear: 25, branches: 0.65, position: { x: 10, y: 10 } }],
+  pins: [{ radius: 40, color: "#ff0000", coverage: 0.55, noise: 0.85, speed: 1, softness: 0.25, scatter: 0.2, position: { x: 10, y: 10 } }],
   pointer: { active: true, radius: 20, repelRadius: 200, repelForce: 1.2, attractForce: 0.06, returnSpeed: 0.008, damping: 0.92, x: 10, y: 10 },
   flickerAmount: 0.4,
 

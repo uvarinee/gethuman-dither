@@ -15,7 +15,7 @@ export const appTransferMode: ToolcraftTransferMode = {
   animationIntent: {
     loopDuration: {
       evidence:
-        "A 7.2-second cycle keeps flicker drift and the integer-count pin flashes seamless without reversing direction.",
+        "A 7.2-second cycle keeps flicker drift and the independent Pin noise seamless without reversing direction.",
       seconds: 7.2,
       source: "product-derived",
     },
@@ -79,7 +79,7 @@ export const appProductReadiness: ToolcraftProductReadiness = {
   mode: "product",
   productName: "Interactive Dither Studio",
   productSummary:
-    "A desktop image studio for monochrome dithering, animated highlights, pointer fields, and pulsing pins.",
+    "A desktop image studio for monochrome dithering, animated highlights, pointer fields, and local noise pins.",
   requestedBehavior:
     "Import JPG or PNG images, tune tone and dithering, animate flicker and pins, interact with the canvas, and export PNG, MP4, or portable settings JSON.",
   viewInteraction: {
@@ -167,7 +167,7 @@ const controlRows: ToolcraftComponentAcceptance[] = [
   controlAcceptance("pointer.damping", "pointer.damping", "slider", "Pointer inertia"),
   controlAcceptance("pins.items", "pins.items", "collectionActions", "Pins", {
     browser: { ...browser("browser: Pins changes dither output"), file: "e2e/product-dither-pin-paint.spec.ts" },
-    expectedObservable: "Each pin switches existing cells to full color within a hard radius, with an outward branching fill, hold and clear cycle; gaps and uncolored cells retain their original appearance.",
+    expectedObservable: "Each Pin varies existing cell colors independently within its radius, with a soft edge and adjustable peripheral scatter; zero scatter preserves the grid and the center is never repelled.",
     controlPartCoverage: [
       "collectionActions.add",
       "collectionActions.remove",
@@ -420,7 +420,7 @@ export const appControlSectionInventory = [
     entity: "Interactive pins",
     entityId: "interactive-pins",
     finiteSelectors: [],
-    groupingReason: "One growable compound collection owns pin position, color, hard radius, flash count, phase durations and branching.",
+    groupingReason: "One growable compound collection owns pin position, color balance, radius, independent noise, soft edge and peripheral scatter.",
     id: "pins",
     targets: ["pins.items"],
     title: "Pins",

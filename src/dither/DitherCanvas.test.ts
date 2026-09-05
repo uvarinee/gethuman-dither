@@ -5,7 +5,7 @@ import { parsePins } from "./DitherCanvas";
 const pin = (x: number, y: number) => [{
   radius: 100,
   color: "#FF4F2E",
-  flashes: 2, fill: 25, hold: 20, clear: 25, branches: 0.65,
+  coverage: 0.55, noise: 0.85, speed: 1, softness: 0.25, scatter: 0.2,
   position: { x: String(x), y: String(y) },
 }];
 

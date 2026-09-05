@@ -9,9 +9,19 @@ test("browser: Pins changes dither output", async ({ page }) => {
   const session = await prepareDither(page);
   await prepareCellPaint(page);
   await seekDitherPhase(page);
+  const pinControl = page.locator('[data-toolcraft-control-target="pins.items"]');
+  const solid = async () => {
+    for (const name of ["Noise amount", "Soft edge", "Scatter"]) await pinControl.getByRole("slider", { name, exact: true }).press("Home");
+    await pinControl.getByRole("slider", { name: "Color mix", exact: true }).press("End");
+  };
+  const setRadius = async () => {
+    await pinControl.getByRole("button", { name: "Edit Radius value", exact: true }).click();
+    const editor = page.getByRole("textbox", { name: "Radius value", exact: true });
+    await editor.fill("24"); await editor.press("Enter");
+  };
+  await solid();
   const radius = page.locator('[data-toolcraft-control-target="pins.items"]').getByRole("slider", { name: "Radius", exact: true });
-  await radius.press("Home");
-  for (let i = 0; i < 22; i++) await radius.press("ArrowRight");
+  await setRadius();
   const observe = session.observe(root => ({
     count: root.querySelectorAll('[data-testid="dither-pin-handle"]').length,
     pixels: root.querySelector<HTMLCanvasElement>('canvas[data-dither-output]')!.toDataURL(),
@@ -23,7 +33,6 @@ test("browser: Pins changes dither output", async ({ page }) => {
   expect(colored.length).toBeGreaterThan(0);
   for (const rgba of colored) expect(rgba).toEqual([255, 79, 46, 255]);
   expect(painted.cells.some(([r, g]) => r > g * 1.3 && r > 60)).toBe(true);
-  await page.locator(ditherOutput).screenshot({ path: ".toolcraft/browser-artifacts/point-cell-paint.png" });
   await page.getByRole("button", { name: "Remove Pin", exact: true }).click();
   await expect(page.getByTestId("dither-pin-handle")).toHaveCount(0);
   const empty = await readToolcraftBrowserObservation(observe);
@@ -33,7 +42,7 @@ test("browser: Pins changes dither output", async ({ page }) => {
   expect(painted.gaps).toEqual(unpainted.gaps);
   expect(unpainted.cells.some(([r, g]) => r > g * 1.3 && r > 60)).toBe(false);
   await expectToolcraftCompoundControlPartOutcome(observe,
-    session.controlAction("pins.items", async () => { await page.getByRole("button", { name: "Add Pin", exact: true }).click(); await radius.press("Home"); for (let i = 0; i < 22; i++) await radius.press("ArrowRight"); }),
+    session.controlAction("pins.items", async () => { await page.getByRole("button", { name: "Add Pin", exact: true }).click(); await solid(); await setRadius(); }),
     initial, { requirementId: "pins.items", part: "collectionActions.add" });
   await expectToolcraftProductObservableToChange(session,
     session.controlAction("pins.items", async () => {
@@ -49,7 +58,7 @@ test("browser: Pins changes dither output", async ({ page }) => {
     session.controlAction("pins.items", async () => page.getByRole("button", { name: "Remove Pin", exact: true }).click()),
     empty, { requirementId: "pins.items", part: "collectionActions.remove" });
   await page.getByRole("button", { name: "Add Pin", exact: true }).click();
-  const pinControl = page.locator('[data-toolcraft-control-target="pins.items"]');
+  await solid();
   const blur = pinControl.getByRole("slider", { name: "Radius", exact: true });
   await blur.scrollIntoViewIfNeeded();
   const thumb = await blur.boundingBox();
@@ -65,21 +74,22 @@ test("browser: Pins changes dither output", async ({ page }) => {
       }), { selector: ditherOutput });
     expect((await readCellPaint(page)).gaps).toEqual(unpainted.gaps);
   } finally { await page.mouse.up(); }
-  // Evaluate timing controls at phases where each promised operation is visible.
-  const fill = pinControl.getByRole("slider", { name: "Fill time", exact: true });
-  await fill.press("End");
-  await seekDitherPhase(page, 0.1);
-  await expectToolcraftProductObservableToChange(session, session.controlAction("pins.items", async () => fill.press("Home")), { selector: ditherOutput });
-  await fill.press("End");
-  await seekDitherPhase(page, 0.23);
-  const hold = pinControl.getByRole("slider", { name: "Hold time", exact: true });
-  await expectToolcraftProductObservableToChange(session, session.controlAction("pins.items", async () => hold.press("Home")), { selector: ditherOutput });
-  await seekDitherPhase(page, 0.23);
-  const clear = pinControl.getByRole("slider", { name: "Clear time", exact: true });
-  await expectToolcraftProductObservableToChange(session, session.controlAction("pins.items", async () => clear.press("Home")), { selector: ditherOutput });
-  await seekDitherPhase(page, 0.05);
-  const branches = pinControl.getByRole("slider", { name: "Branching", exact: true });
-  await expectToolcraftProductObservableToChange(session, session.controlAction("pins.items", async () => branches.press("Home")), { selector: ditherOutput });
-  const flashes = pinControl.getByRole("slider", { name: "Flashes", exact: true });
-  await expectToolcraftProductObservableToChange(session, session.controlAction("pins.items", async () => flashes.press("End")), { selector: ditherOutput });
+  // Independent color noise, soft edge and optional displacement each affect output.
+  for (const [name, key] of [["Color mix", "Home"], ["Noise amount", "End"], ["Noise speed", "End"], ["Soft edge", "End"], ["Scatter", "End"]] as const) {
+    await expectToolcraftProductObservableToChange(session, session.controlAction("pins.items", async () => {
+      await pinControl.getByRole("slider", { name, exact: true }).press(key);
+    }), { selector: ditherOutput });
+  }
+  await pinControl.getByRole("slider", { name: "Scatter", exact: true }).press("Home");
+  const grid = await readCellPaint(page);
+  expect(grid.gaps).toEqual(unpainted.gaps);
+  const first = grid.cells;
+  await seekDitherPhase(page, 0.37);
+  await expect.poll(async () => (await readCellPaint(page)).cells).not.toEqual(first);
+  await pinControl.getByRole("slider", { name: "Noise speed", exact: true }).press("Home");
+  const frozen = (await readCellPaint(page)).cells;
+  await seekDitherPhase(page, 0.63);
+  expect((await readCellPaint(page)).cells).toEqual(frozen);
+  await pinControl.getByRole("slider", { name: "Scatter", exact: true }).press("End");
+  await expect.poll(async () => (await readCellPaint(page)).gaps).not.toEqual(grid.gaps);
 });
