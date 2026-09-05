@@ -15,7 +15,7 @@ export const appTransferMode: ToolcraftTransferMode = {
   animationIntent: {
     loopDuration: {
       evidence:
-        "A 7.2-second cycle keeps flicker drift and the double pin pulse seamless without reversing direction.",
+        "A 7.2-second cycle keeps flicker drift and the integer-count pin flashes seamless without reversing direction.",
       seconds: 7.2,
       source: "product-derived",
     },
@@ -160,16 +160,14 @@ const controlRows: ToolcraftComponentAcceptance[] = [
   controlAcceptance("motion.breathing-amount", "motion.breathing.amount", "slider", "Breathing amount"),
   controlAcceptance("pointer.enabled", "pointer.enabled", "switch", "Pointer response"),
   controlAcceptance("pointer.radius", "pointer.radius", "slider", "Pointer radius"),
-  controlAcceptance("pointer.strength", "pointer.strength", "slider", "Pointer strength", {
-    expectedObservable: "Strength reveals additional source-weighted grid cells near the cursor without moving their centers; zero restores the unhovered field.",
-  }),
-  controlAcceptance("pointer.decay", "pointer.decay", "slider", "Pointer decay"),
-  controlAcceptance("pointer.speed", "pointer.speed", "slider", "Pointer speed"),
-  controlAcceptance("pointer.softness", "pointer.softness", "slider", "Pointer softness"),
-  controlAcceptance("pointer.size", "pointer.size", "slider", "Pointer size"),
+  controlAcceptance("pointer.repelRadius", "pointer.repelRadius", "slider", "Pointer repel radius"),
+  controlAcceptance("pointer.repelForce", "pointer.repelForce", "slider", "Pointer repel force"),
+  controlAcceptance("pointer.attractForce", "pointer.attractForce", "slider", "Pointer attract force"),
+  controlAcceptance("pointer.return", "pointer.return", "slider", "Pointer return"),
+  controlAcceptance("pointer.damping", "pointer.damping", "slider", "Pointer inertia"),
   controlAcceptance("pins.items", "pins.items", "collectionActions", "Pins", {
     browser: { ...browser("browser: Pins changes dither output"), file: "e2e/product-dither-pin-paint.spec.ts" },
-    expectedObservable: "Each pin paints individual cells with a soft color falloff while preserving their size, centers and background gaps.",
+    expectedObservable: "Each pin switches existing cells to full color within a hard radius, with an outward branching fill, hold and clear cycle; gaps and uncolored cells retain their original appearance.",
     controlPartCoverage: [
       "collectionActions.add",
       "collectionActions.remove",
@@ -411,18 +409,18 @@ export const appControlSectionInventory = [
     entity: "Pointer field",
     entityId: "pointer-field",
     finiteSelectors: [
-      { affectedTargets: [], reason: "Response gates radius, strength, and decay dependents.", role: "branch", target: "pointer.enabled" },
+      { affectedTargets: [], reason: "Response gates the six particle force and recovery controls.", role: "branch", target: "pointer.enabled" },
     ],
     groupingReason: "Availability, reveal strength and edge/size parameters define one grid-aligned cursor paint field.",
     id: "pointer",
-    targets: ["pointer.enabled", "pointer.radius", "pointer.strength", "pointer.decay", "pointer.speed", "pointer.softness", "pointer.size"],
+    targets: ["pointer.enabled", "pointer.radius", "pointer.repelRadius", "pointer.repelForce", "pointer.attractForce", "pointer.return", "pointer.damping"],
     title: "Pointer",
   },
   {
     entity: "Interactive pins",
     entityId: "interactive-pins",
     finiteSelectors: [],
-    groupingReason: "One growable compound collection owns pin position, color, shape, intensity, and pulse.",
+    groupingReason: "One growable compound collection owns pin position, color, hard radius, flash count, phase durations and branching.",
     id: "pins",
     targets: ["pins.items"],
     title: "Pins",

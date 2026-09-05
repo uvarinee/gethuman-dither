@@ -1,5 +1,5 @@
 import * as React from "react";
-import { decayDitherPointer, idleDitherPointer, type DitherPointer } from "./dither-scene";
+import { idleDitherPointer, type DitherPointer } from "./dither-scene";
 import { retainDitherSource } from "./dither-source";
 
 export function useDitherSource(resourceRef: string | undefined, url: string | undefined) {
@@ -34,7 +34,7 @@ export function usePreviewLifecycle(ref: React.RefObject<HTMLCanvasElement | nul
   return { visible, reducedMotion };
 }
 
-export function useDitherPointer(ref: React.RefObject<HTMLCanvasElement | null>, width: number, height: number, decay: number, enabled: boolean) {
+export function useDitherPointer(ref: React.RefObject<HTMLCanvasElement | null>, width: number, height: number, enabled: boolean) {
   const [pointer, setPointer] = React.useState<DitherPointer>(idleDitherPointer);
   const currentPointer = React.useRef<DitherPointer>(idleDitherPointer);
   const frame = React.useRef<number | null>(null);
@@ -42,6 +42,7 @@ export function useDitherPointer(ref: React.RefObject<HTMLCanvasElement | null>,
   React.useEffect(() => { if (!enabled) { stop(); currentPointer.current = idleDitherPointer; setPointer(idleDitherPointer); } return stop; }, [enabled, stop]);
   const onPointerMove = React.useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
     if (!enabled || !ref.current) return;
+    if (event.buttons !== 0) { stop(); currentPointer.current = idleDitherPointer; setPointer(idleDitherPointer); return; }
     stop();
     const bounds = ref.current.getBoundingClientRect();
     const x = (event.clientX - bounds.left) * width / Math.max(1, bounds.width);
@@ -49,15 +50,8 @@ export function useDitherPointer(ref: React.RefObject<HTMLCanvasElement | null>,
     frame.current = requestAnimationFrame(() => { frame.current = null; currentPointer.current = { active: true, energy: 1, x, y }; setPointer(currentPointer.current); });
   }, [enabled, height, ref, stop, width]);
   const onPointerLeave = React.useCallback(() => {
-    stop(); if (!enabled) return;
-    const fade = () => {
-      const next = decayDitherPointer(currentPointer.current, decay);
-      currentPointer.current = next;
-      setPointer(next);
-      frame.current = next.active ? requestAnimationFrame(fade) : null;
-    };
-    frame.current = requestAnimationFrame(fade);
-  }, [decay, enabled, stop]);
+    stop(); currentPointer.current = idleDitherPointer; setPointer(idleDitherPointer);
+  }, [stop]);
   return { pointer, onPointerMove, onPointerLeave };
 }
 

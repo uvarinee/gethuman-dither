@@ -31,6 +31,9 @@ test("browser: dither workspace restores canvas values panels timeline and media
       width: state.canvas?.size.width ?? null,
       liveWidth: canvas?.style.width ?? null,
       inverted: state.values?.["dither.invert"] ?? null,
+      repelForce: state.values?.["pointer.repelForce"] ?? null,
+      pinRadius: state.values?.["pins.items"]?.[0]?.radius ?? null,
+      pinFlashes: state.values?.["pins.items"]?.[0]?.flashes ?? null,
       controlsCollapsed: state.panels?.controls?.collapsed ?? null,
       liveCollapsed: root.querySelector('[aria-label="Expand controls"]') !== null,
       duration: state.timeline?.durationSeconds ?? null,
@@ -45,6 +48,13 @@ test("browser: dither workspace restores canvas values panels timeline and media
   let expectedPixels = "";
   await expectToolcraftPersistenceState(observation,
     session.targetAction("canvas.size.width", async () => {
+      const response = (await getToolcraftControlFieldByTarget(page, "pointer.enabled")).getByRole("switch");
+      await response.click();
+      await (await getToolcraftControlFieldByTarget(page, "pointer.repelForce")).getByRole("slider").press("End");
+      await response.click();
+      const pins = page.locator('[data-toolcraft-control-target="pins.items"]');
+      await pins.getByRole("slider", { name: "Radius", exact: true }).press("Home");
+      await pins.getByRole("slider", { name: "Flashes", exact: true }).press("End");
       const width = await getToolcraftControlFieldByTarget(page, "canvas.size.width");
       await width.locator("input").first().fill("256");
       await width.locator("input").first().press("Enter");
@@ -64,6 +74,7 @@ test("browser: dither workspace restores canvas values panels timeline and media
       expectedPixels = await getToolcraftProductObservableSnapshot(page, { selector: ditherOutput });
     }), session.reload(), {
       persistedKeys: ["canvas", "mediaAssets", "panels", "timeline", "values"],
+      repelForce: 3, pinRadius: 2, pinFlashes: 8,
       width: 256, liveWidth: "256px", inverted: true,
       controlsCollapsed: true, liveCollapsed: true,
       duration: 3, playing: false, liveDuration: "3",

@@ -4,7 +4,7 @@ import { getDynamicCell, type DynamicDitherSettings } from "./dither-renderer";
 const base: DynamicDitherSettings = {
   background: "#0A0A0A", breathingAmount: 0.08, breathingEnabled: true,
   includeBackground: true, ink: "#F4F1EA", pins: [],
-  pointer: { active: false, radius: 180, strength: 0.55, x: 80, y: 45 },
+  pointer: { active: false, radius: 180, repelRadius: 200, repelForce: 1.2, attractForce: 0.06, returnSpeed: 0.008, damping: 0.92, x: 80, y: 45 },
   flickerAmount: 0.28, flickerEnabled: true,
   flickerSpeed: 0.65, timelineProgress: 0.23,
 };

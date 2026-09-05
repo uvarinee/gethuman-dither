@@ -7,8 +7,8 @@ const dynamics: DynamicDitherSettings = {
   breathingEnabled: true,
   includeBackground: true,
   ink: "#ffffff",
-  pins: [{ bloom: 40, color: "#ff0000", core: 5, intensity: 1, position: { x: 10, y: 10 }, pulse: "double" }],
-  pointer: { active: true, radius: 20, strength: 0.5, x: 10, y: 10 },
+  pins: [{ radius: 40, color: "#ff0000", flashes: 2, fill: 25, hold: 20, clear: 25, branches: 0.65, position: { x: 10, y: 10 } }],
+  pointer: { active: true, radius: 20, repelRadius: 200, repelForce: 1.2, attractForce: 0.06, returnSpeed: 0.008, damping: 0.92, x: 10, y: 10 },
   flickerAmount: 0.4,
 
   flickerEnabled: true,
@@ -40,9 +40,10 @@ describe("dither renderer", () => {
   });
 
   it("applies pointer and pin influence without changing static data", () => {
-    const near = getDynamicCell(10, 10, dynamics);
+    const near = getDynamicCell(10, 10, { ...dynamics, timelineProgress: 0.16 });
     const far = getDynamicCell(1000, 1000, dynamics);
-    expect(near.scale).toBeGreaterThan(far.scale);
+    expect(near.scale).toBeGreaterThan(0);
+    expect(far.color).toEqual([255, 255, 255]);
     expect(near.color[0]).toBeGreaterThan(near.color[1]);
   });
 });

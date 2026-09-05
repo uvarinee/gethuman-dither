@@ -27,12 +27,14 @@ export function parsePins(value: unknown, width: number, height: number, backing
     const position = pin.position && typeof pin.position === "object" ? pin.position as Record<string, unknown> : {};
     const axis = (value: unknown) => Math.max(-1, Math.min(1, Number.parseFloat(String(value)) || 0));
     return [{
-      bloom: numberValue(pin.bloom, 48) * Math.max(0, backingScale),
+      radius: numberValue(pin.radius, 100) * Math.max(0, backingScale),
       color: stringValue(pin.color, "#FF4F2E"),
-      core: numberValue(pin.core, 12) * Math.max(0, backingScale),
-      intensity: numberValue(pin.intensity, 0.9),
       position: { x: (axis(position.x) + 1) * width / 2, y: (axis(position.y) + 1) * height / 2 },
-      pulse: pin.pulse === "single" ? "single" : "double",
+      flashes: Math.max(1, Math.min(8, Math.round(numberValue(pin.flashes, 2)))),
+      fill: Math.max(0, Math.min(30, numberValue(pin.fill, 25))),
+      hold: Math.max(0, Math.min(30, numberValue(pin.hold, 20))),
+      clear: Math.max(0, Math.min(30, numberValue(pin.clear, 25))),
+      branches: Math.max(0, Math.min(1, numberValue(pin.branches, 0.65))),
     }];
   });
 }
@@ -56,18 +58,13 @@ export function readDitherSettings(values: Record<string, unknown>) {
 export type DitherPointer = Readonly<{ active: boolean; energy: number; x: number; y: number }>;
 export const idleDitherPointer: DitherPointer = Object.freeze({ active: false, energy: 0, x: 0, y: 0 });
 
-export function decayDitherPointer(pointer: DitherPointer, decay: number): DitherPointer {
-  const energy = pointer.energy * Math.max(0.1, Math.min(0.99, decay));
-  return energy < 0.01 ? idleDitherPointer : { ...pointer, energy };
-}
-
 export function readDynamicSettings(values: Record<string, unknown>, width: number, height: number, timelineProgress: number, includeBackground: boolean, pointer: DitherPointer = idleDitherPointer): DynamicDitherSettings {
   return {
     background: stringValue(values["appearance.background"], "#0A0A0A"),
     breathingAmount: numberValue(values["motion.breathing.amount"], 0.08), breathingEnabled: booleanValue(values["motion.breathing.enabled"], true),
     includeBackground, ink: stringValue(values["dither.ink"], "#F4F1EA"),
     pins: parsePins(values["pins.items"], width, height, 1),
-    pointer: { active: booleanValue(values["pointer.enabled"], true) && pointer.active, radius: numberValue(values["pointer.radius"], 180), strength: numberValue(values["pointer.strength"], 0.55), energy: pointer.energy, x: pointer.x, y: pointer.y, speed: numberValue(values["pointer.speed"], 3), softness: numberValue(values["pointer.softness"], 0.65), size: numberValue(values["pointer.size"], 0.2) },
+    pointer: { active: booleanValue(values["pointer.enabled"], true) && pointer.active, radius: numberValue(values["pointer.radius"], 85), x: pointer.x, y: pointer.y, repelRadius: numberValue(values["pointer.repelRadius"], 200), repelForce: numberValue(values["pointer.repelForce"], 1.2), attractForce: numberValue(values["pointer.attractForce"], 0.06), returnSpeed: numberValue(values["pointer.return"], 0.008), damping: numberValue(values["pointer.damping"], 0.92) },
     flickerAmount: numberValue(values["motion.flicker.amount"], 0.65),
     flickerEnabled: booleanValue(values["motion.flicker.enabled"], true), flickerSpeed: numberValue(values["motion.flicker.speed"], 1), timelineProgress,
   };
