@@ -23,9 +23,9 @@ describe("dither pipeline fidelity", () => {
     expect(interactionFor("pointer.state", "control-drag")?.mustNotInvalidate).toContain("source-decode");
   });
 
-  it("assigns pixel work to presentation instead of the settings pass", () => {
+  it("models simulation sample work separately from pin presentation", () => {
     expect(appRendererPipelineRegistration.passes.find(({ id }) => id === "dynamic-field")?.cost)
-      .toMatchObject({ dimensions: [], relationship: "constant" });
+      .toMatchObject({ dimensions: ["preview-pixels", "sample-step"], relationship: "product" });
     expect(appRendererPipelineRegistration.passes.find(({ id }) => id === "preview-present")?.cost.dimensions)
       .toContain("pin-count");
   });

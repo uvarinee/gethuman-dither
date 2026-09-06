@@ -68,11 +68,11 @@ export async function startDitherSliderDrag(page: Page, target: string, ratio: n
   await expect(thumb).not.toHaveAttribute("aria-valuenow", before!);
 }
 
-export async function seekDitherPhase(page: Page) {
+export async function seekDitherPhase(page: Page, phase = 0.22) {
   await setDitherSwitch(page, "panels.timeline.extended", true);
   const scrubber = page.getByRole("slider", { name: "Playback position" });
   const bounds = await scrubber.boundingBox();
   if (!bounds) throw new Error("Missing timeline scrubber");
-  await scrubber.click({ position: { x: bounds.width * 0.22, y: bounds.height / 2 } });
+  await scrubber.click({ position: { x: bounds.width * phase, y: bounds.height / 2 } });
   await expect(scrubber).not.toHaveAttribute("aria-valuenow", "0");
 }

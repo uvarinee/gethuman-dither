@@ -1,7 +1,5 @@
 import { expect, it } from "vitest";
-import { particleFlicker, pointerEnvelope } from "./dither-flicker";
-import { getDynamicCell } from "./dither-renderer";
-import { readDynamicSettings } from "./dither-scene";
+import { particleFlicker } from "./dither-flicker";
 
 it("fades independent particles deterministically and closes fractional-speed loops", () => {
   for (const speed of [0.25, 0.65, 1, 1.73, 4, 24]) {
@@ -24,30 +22,3 @@ it("higher speed produces more independent fade variation over the same duration
   };
   expect(variation(3)).toBeGreaterThan(variation(1) * 1.5);
 });
-
-it("hover is a local raised lens without color brightening and with a smooth edge", () => {
-  const values = { "motion.breathing.enabled": false, "motion.flicker.amount": 1, "dither.ink": "#2266AA", "pointer.radius": 100 };
-  const idle = readDynamicSettings(values, 320, 180, 0.23, true);
-  const hover = readDynamicSettings(values, 320, 180, 0.23, true, { active: true, energy: 1, x: 120, y: 80 });
-  const center = getDynamicCell(120, 80, hover);
-  expect(center.color).toEqual([34, 102, 170]);
-  expect(center.offsetY).toBeLessThan(0);
-  expect(getDynamicCell(140, 80, hover).offsetX).toBeGreaterThan(0);
-  expect(getDynamicCell(240, 80, hover)).toEqual(getDynamicCell(240, 80, idle));
-  expect(pointerEnvelope(99.999, 100, 0.7)).toBeLessThan(1e-6);
-  expect(pointerEnvelope(75, 100, 0.9)).toBeLessThan(pointerEnvelope(75, 100, 0.1));
-  const solid = readDynamicSettings({ ...values, "motion.flicker.amount": 0 }, 320, 180, 0.23, true);
-  expect(getDynamicCell(120, 80, solid).opacity).toBe(1);
-});
-
-for (const [label, patch] of [
-  ["Pointer speed", { "pointer.speed": 6 }],
-  ["Pointer softness", { "pointer.softness": 1 }],
-  ["Pointer size", { "pointer.size": 1 }],
-] as const) {
-  it(`${label} changes dither output`, () => {
-    const pointer = { active: true, energy: 1, x: 120, y: 80 };
-    const sample = (values: Record<string, unknown>) => getDynamicCell(200, 90, readDynamicSettings(values, 320, 180, 0.23, true, pointer));
-    expect(sample(patch)).not.toEqual(sample({}));
-  });
-}

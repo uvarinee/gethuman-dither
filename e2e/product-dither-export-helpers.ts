@@ -1,7 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import { getToolcraftControlFieldByTarget } from "./browser-control-target-helpers";
 import { prepareDither, setDitherSwitch } from "./product-dither-helpers";
-import { expectExportExcludesCanvasHandles } from "./canvas-handle-helpers";
 import { inspectToolcraftImageDownload } from "./image-artifact-inspection";
 import { observeToolcraftDecodedPixels, type ToolcraftExpectedDecodedPixel } from "./decoded-pixel-observation";
 
@@ -38,15 +37,6 @@ export async function readDitherPreviewExpectation(page: Page, video = false) {
   expect(expectedPixels.length).toBeGreaterThan(0);
   expect(observation.nonBackgroundBounds).not.toBeNull();
   return { expectedPixels, expectedBounds: observation.nonBackgroundBounds! };
-}
-
-export async function provePinExportClean(page: Page) {
-  await chooseDitherExport(page, "export.image.format", "PNG");
-  await chooseDitherExport(page, "export.image.resolution", "2K");
-  await expectExportExcludesCanvasHandles(page,
-    () => downloadDither(page, "Export PNG"),
-    async (download) => (await inspectToolcraftImageDownload({ page, download, backgroundRgba: [10, 10, 10, 255] })).inspection,
-    { requirementId: "pins.drag", target: "pins.items" });
 }
 
 export async function chooseDitherExport(page: Page, target: string, label: string) {

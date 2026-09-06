@@ -1,5 +1,7 @@
 import { defineToolcraft } from "@/toolcraft/runtime";
 
+import { pointerSection, pinsSection } from "@/dither/interaction-controls";
+
 import { appIdentity } from "./app-identity";
 
 const always = { mode: "always" } as const;
@@ -251,158 +253,8 @@ export const appSchema = defineToolcraft({
           id: "motion",
           title: "Motion",
         },
-        {
-          controls: {
-            enabled: {
-              applicability: always,
-              defaultValue: true,
-              label: "Response",
-              performanceRole: "responsiveness",
-              target: "pointer.enabled",
-              type: "switch",
-            },
-            radius: {
-              applicability: whenEnabled("pointer.enabled"),
-              defaultValue: 180,
-              label: "Radius",
-              max: 600,
-              min: 24,
-              performanceRole: "responsiveness",
-              sliderValueKind: "continuous",
-              step: 4,
-              target: "pointer.radius",
-              type: "slider",
-              unit: "px",
-            },
-            strength: {
-              applicability: whenEnabled("pointer.enabled"),
-              defaultValue: 0.55,
-              label: "Bulge",
-              description: "Raises and expands the particle surface under the cursor without brightening its color.",
-              max: 1,
-              min: 0,
-              performanceRole: "responsiveness",
-              sliderValueKind: "continuous",
-              step: 0.01,
-              target: "pointer.strength",
-              type: "slider",
-            },
-            decay: {
-              applicability: whenEnabled("pointer.enabled"),
-              defaultValue: 0.82,
-              label: "Decay",
-              max: 0.99,
-              min: 0.1,
-              performanceRole: "responsiveness",
-              sliderValueKind: "continuous",
-              step: 0.01,
-              target: "pointer.decay",
-              type: "slider",
-            },
-            speed: {
-              applicability: { mode: "conditional", all: [{ target: "pointer.enabled", equals: true }, { target: "motion.flicker.enabled", equals: true }] },
-              defaultValue: 3,
-              label: "Flicker speed",
-              description: "Local fade-rate multiplier. One keeps the ambient rate; higher values accelerate only the hovered region.",
-              min: 1, max: 6, step: 0.1, sliderValueKind: "continuous",
-              performanceRole: "responsiveness", target: "pointer.speed", type: "slider",
-            },
-            softness: {
-              applicability: whenEnabled("pointer.enabled"),
-              defaultValue: 0.65,
-              label: "Soft edge",
-              description: "Width of the smooth transition around the cursor field; does not blur the source image.",
-              min: 0, max: 1, step: 0.01, sliderValueKind: "continuous",
-              performanceRole: "responsiveness", target: "pointer.softness", type: "slider",
-            },
-            size: {
-              applicability: whenEnabled("pointer.enabled"),
-              defaultValue: 0.2,
-              label: "Particle size",
-              description: "Additional particle enlargement inside the cursor field, independent of the surface bulge.",
-              min: 0, max: 1, step: 0.01, sliderValueKind: "continuous",
-              performanceRole: "responsiveness", target: "pointer.size", type: "slider",
-            },
-          },
-          id: "pointer",
-          title: "Pointer",
-        },
-        {
-          controls: {
-            pins: {
-              applicability: always,
-              defaultValue: [
-                {
-                  bloom: 48,
-                  color: "#FF4F2E",
-                  core: 12,
-                  intensity: 0.9,
-                  position: { x: "0.00", y: "0.00" },
-                  pulse: "double",
-                },
-              ],
-              itemControls: {
-                position: {
-                  defaultValue: { x: "0.00", y: "0.00" },
-                  label: "Position",
-                  type: "vector",
-                },
-                color: {
-                  defaultValue: "#FF4F2E",
-                  label: "Color",
-                  type: "color",
-                },
-                core: {
-                  defaultValue: 12,
-                  label: "Core",
-                  max: 64,
-                  min: 2,
-                  sliderValueKind: "continuous",
-                  step: 1,
-                  type: "slider",
-                  unit: "px",
-                },
-                bloom: {
-                  defaultValue: 48,
-                  label: "Bloom",
-                  max: 220,
-                  min: 8,
-                  sliderValueKind: "continuous",
-                  step: 2,
-                  type: "slider",
-                  unit: "px",
-                },
-                intensity: {
-                  defaultValue: 0.9,
-                  label: "Intensity",
-                  max: 1,
-                  min: 0,
-                  sliderValueKind: "continuous",
-                  step: 0.01,
-                  type: "slider",
-                },
-                pulse: {
-                  defaultValue: "double",
-                  label: "Pulse",
-                  options: [
-                    { label: "Single", value: "single" },
-                    { label: "Double", value: "double" },
-                  ],
-                  type: "segmented",
-                },
-              },
-              itemLabel: "Pin",
-              minItems: 0,
-              performanceReason:
-                "Adding and editing pins changes dynamic field work without rebuilding source tone data.",
-              performanceRole: "responsiveness",
-              target: "pins.items",
-              type: "collectionActions",
-            },
-          },
-          id: "pins",
-          title: "Pins",
-        },
+        pointerSection,
+        pinsSection,
         {
           controls: {
             imageFormat: {

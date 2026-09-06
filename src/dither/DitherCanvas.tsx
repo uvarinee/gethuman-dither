@@ -9,6 +9,7 @@ import { useDitherPointer, useDitherSource, usePreviewLifecycle, useRecoverableP
 import { DitherPinHandles } from "./DitherPinHandles";
 import { assertDitherWorkload } from "./dither-limits";
 import type { RasterPixels } from "./dither-algorithms";
+import { PointerSimulation } from "./pointer-physics";
 import styles from "./DitherCanvas.module.css";
 import { getDitherSourcePixels } from "./dither-source";
 export { parsePins } from "./dither-scene";
@@ -49,40 +50,54 @@ export function DitherCanvas(): React.JSX.Element {
   const fieldState = useToolcraftPipelinePass(ditherBuildPass, { "canvas.sceneFrame": `${width}x${height}@${pixelSize}:${guardError ? "unsupported" : "ready"}`, "dither.settings": dither, "tone-map": toneField }, () => toneField && !guardError ? buildDitherField(toneField, width, height, pixelSize, dither) : null);
   const field = resultOf<StaticDitherField>(fieldState);
   const ready = Boolean(rect && rawSource && field && !guardError && !decoded?.error);
-  const pointer = useDitherPointer(ref, width, height, numberValue(values["pointer.decay"], 0.82), ready && lifecycle.visible && !lifecycle.reducedMotion && booleanValue(values["pointer.enabled"], true));
+  const pointer = useDitherPointer(ref, width, height, ready && lifecycle.visible && !lifecycle.reducedMotion && booleanValue(values["pointer.enabled"], true));
   const progress = lifecycle.reducedMotion ? 0 : getToolcraftTimelineLoopProgress(timeline);
   const dynamic = React.useMemo(() => readDynamicSettings(values, width, height, progress, includeBackground, lifecycle.reducedMotion ? idleDitherPointer : pointer.pointer), [height, includeBackground, lifecycle.reducedMotion, pointer.pointer, progress, values, width]);
   const latest = React.useRef({ dynamic, field, ready, width, height, backingWidth, backingHeight, duration: timeline.durationSeconds });
   latest.current = { dynamic, field, ready, width, height, backingWidth, backingHeight, duration: timeline.durationSeconds };
-  const lastPaint = React.useRef(0);
+  const simulation = React.useRef<PointerSimulation | null>(null);
+  React.useEffect(() => {
+    simulation.current = field ? new PointerSimulation(field.mask, field.width, field.height, width, height) : null;
+    return () => { simulation.current = null; };
+  }, [field, width, height]);
+  const responseEnabled = booleanValue(values["pointer.enabled"], true);
+  React.useEffect(() => { if (!responseEnabled || lifecycle.reducedMotion) simulation.current?.clear(); }, [responseEnabled, lifecycle.reducedMotion]);
   React.useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
     if (!ready) { canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height); return; }
     if (!lifecycle.visible || viewportActive) return;
-    let cancelled = false;
-    const timer = window.setTimeout(() => {
+    let cancelled = false, frame = 0, lastPaint = 0, lastStep = 0;
+    let painted: typeof latest.current | undefined;
+    const tick = async (now: number) => {
+      if (cancelled) return;
       const next = latest.current;
-      if (cancelled || !next.ready || !next.field || !ref.current) return;
-      const render = async () => {
-        const settings = pipeline ? await pipeline.runPass(dynamicFieldPass, undefined, () => next.dynamic) : next.dynamic;
-        if (cancelled || !ref.current) return;
+      const sim = simulation.current;
+      const changed = !painted || painted.dynamic !== next.dynamic || painted.field !== next.field || painted.backingWidth !== next.backingWidth || painted.backingHeight !== next.backingHeight;
+      if (now - lastPaint >= 1000 / 30 && (changed || next.dynamic.pointer.active || (sim?.cells.size ?? 0) > 0)) {
+        const dt = lastStep ? (now - lastStep) / 1000 : 1 / 60;
+        lastStep = now;
+        const update = () => { sim?.advance(dt, next.dynamic.pointer); return next.dynamic; };
+        const settings = pipeline ? await pipeline.runPass(dynamicFieldPass, undefined, update) : update();
+        if (cancelled || !ref.current || !next.field) return;
         const canvas = ref.current;
         if (canvas.width !== next.backingWidth) canvas.width = next.backingWidth;
         if (canvas.height !== next.backingHeight) canvas.height = next.backingHeight;
         const context = canvas.getContext("2d"); if (!context) return;
         const present = () => {
           context.save(); context.scale(next.backingWidth / next.width, next.backingHeight / next.height);
-          renderDitherFrame(context, next.field!, next.width, next.height, settings as DynamicDitherSettings);
-          context.restore(); lastPaint.current = performance.now();
+          renderDitherFrame(context, next.field!, next.width, next.height, settings as DynamicDitherSettings, true, sim?.cells);
+          context.restore(); lastPaint = now; painted = next;
           canvas.dataset.ditherCycleDuration = String(next.duration);
         };
         if (pipeline) await pipeline.runPass(previewPresentPass, undefined, present); else present();
-      };
-      void render();
-    }, Math.max(0, 1000 / 30 - (performance.now() - lastPaint.current)));
-    return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [backingHeight, backingWidth, dynamic, field, lifecycle.visible, pipeline, ready, viewportActive]);
+      } else if (!next.dynamic.pointer.active && !sim?.cells.size) lastStep = now;
+      if (!cancelled) frame = requestAnimationFrame((time) => { void tick(time); });
+    };
+    frame = requestAnimationFrame((time) => { void tick(time); });
+    return () => { cancelled = true; cancelAnimationFrame(frame); };
+  }, [field, lifecycle.visible, pipeline, ready, viewportActive]);
+
   return <>
     <canvas className={rect ? styles.canvas : `${styles.canvas} ${styles.hidden}`} data-dither-output="" data-toolcraft-product-output="" ref={ref} onPointerMove={pointer.onPointerMove} onPointerLeave={pointer.onPointerLeave} />
     {ready && <DitherPinHandles width={width} height={height} />}

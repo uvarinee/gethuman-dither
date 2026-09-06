@@ -8,9 +8,13 @@ import {
   type ToneSettings,
 } from "./dither-algorithms";
 import { assertDitherWorkload } from "./dither-limits";
-import { particleFlicker, pointerEnvelope } from "./dither-flicker";
+import { particleFlicker } from "./dither-flicker";
+import { samplePin, type DitherPin } from "./pin-animation";
+import type { MovingCell, PointerForces } from "./pointer-physics";
+export type { DitherPin } from "./pin-animation";
 
 export type StaticDitherField = Readonly<{
+  inverted?: boolean;
   height: number;
   mask: Uint8Array;
   pixelSize: number;
@@ -24,15 +28,6 @@ export type ToneField = Readonly<{
   width: number;
 }>;
 
-export type DitherPin = Readonly<{
-  bloom: number;
-  color: string;
-  core: number;
-  intensity: number;
-  position: Readonly<{ x: number; y: number }>;
-  pulse: "double" | "single";
-}>;
-
 export type DynamicDitherSettings = Readonly<{
   background: string;
   breathingAmount: number;
@@ -40,7 +35,7 @@ export type DynamicDitherSettings = Readonly<{
   includeBackground: boolean;
   ink: string;
   pins: readonly DitherPin[];
-  pointer: Readonly<{ active: boolean; radius: number; strength: number; x: number; y: number; energy?: number; speed?: number; softness?: number; size?: number }>;
+  pointer: PointerForces;
   flickerAmount: number;
   flickerEnabled: boolean;
   flickerSpeed: number;
@@ -95,6 +90,7 @@ export function buildDitherField(
   return {
     height,
     mask: ditherLuminance(tone, width, height, dither),
+    inverted: dither.invert,
     pixelSize: resolvedPixelSize,
     tone,
     width,
@@ -148,55 +144,30 @@ export function parseHexColor(value: string): readonly [number, number, number] 
   ];
 }
 
-function pulseAt(progress: number, pulse: DitherPin["pulse"]): number {
-  const wave = (offset: number) => Math.pow(Math.max(0, Math.cos((progress - offset) * TAU)), 12);
-  return pulse === "double" ? Math.max(wave(0), wave(0.22)) : wave(0);
-}
-
 export function getDynamicCell(
   sceneX: number,
   sceneY: number,
   settings: DynamicDitherSettings,
-): Readonly<{ color: readonly [number, number, number]; scale: number; opacity: number; offsetX: number; offsetY: number }> {
+): Readonly<{ color: readonly [number, number, number]; scale: number; opacity: number; offsetX: number; offsetY: number; reveal: number }> {
   const progress = ((settings.timelineProgress % 1) + 1) % 1;
   let scale = settings.breathingEnabled
     ? 1 + Math.sin(progress * TAU) * settings.breathingAmount
     : 1;
   let color = parseHexColor(settings.ink);
 
-  let influence = 0;
-  let offsetX = 0;
-  let offsetY = 0;
-  if (settings.pointer.active) {
-    const dx = sceneX - settings.pointer.x;
-    const dy = sceneY - settings.pointer.y;
-    influence = pointerEnvelope(Math.hypot(dx, dy), settings.pointer.radius, settings.pointer.softness ?? 0.65) * (settings.pointer.energy ?? 1);
-    const raised = influence * settings.pointer.strength;
-    offsetX = dx * raised * 0.28;
-    offsetY = dy * raised * 0.28 - settings.pointer.radius * raised * 0.12;
-    scale += raised * 0.25 + influence * (settings.pointer.size ?? 0.2);
-  }
+  let opacity = settings.flickerEnabled ? 1 - clamp01(settings.flickerAmount) * (1 - particleFlicker(sceneX, sceneY, progress, settings.flickerSpeed)) : 1;
 
-  let opacity = 1;
-  if (settings.flickerEnabled) {
-    const ambient = particleFlicker(sceneX, sceneY, progress, settings.flickerSpeed);
-    const fast = influence > 0 ? particleFlicker(sceneX, sceneY, progress, settings.flickerSpeed * (settings.pointer.speed ?? 3)) : ambient;
-    opacity = 1 - clamp01(settings.flickerAmount) * (1 - (ambient + (fast - ambient) * influence));
-  }
-
+  let offsetX = 0, offsetY = 0;
   for (const pin of settings.pins) {
-    const distance = Math.hypot(sceneX - pin.position.x, sceneY - pin.position.y);
-    const radial = distance <= pin.core
-      ? 1
-      : 1 - clamp01((distance - pin.core) / Math.max(1, pin.bloom));
-    const influence = radial * pin.intensity * (0.55 + pulseAt(progress, pin.pulse) * 0.45);
-    if (influence <= 0) continue;
-    const pinColor = parseHexColor(pin.color);
-    color = color.map((channel, index) => Math.round(channel + (pinColor[index] - channel) * influence)) as unknown as readonly [number, number, number];
-    scale += influence * 0.65;
+    const sample = samplePin(sceneX, sceneY, progress, pin);
+    offsetX += sample.offsetX; offsetY += sample.offsetY;
+    if (sample.weight === 0) continue;
+    const accent = parseHexColor(pin.color);
+    color = [0, 1, 2].map(i => Math.round(color[i] + (accent[i] - color[i]) * sample.weight)) as [number, number, number];
+    opacity += (1 - opacity) * sample.weight;
   }
 
-  return { color, scale: Math.max(0.08, scale), opacity, offsetX, offsetY };
+  return { color, scale: Math.max(0.08, scale), opacity, offsetX, offsetY, reveal: 0 };
 }
 
 export function renderDitherFrame(
@@ -206,6 +177,7 @@ export function renderDitherFrame(
   height: number,
   settings: DynamicDitherSettings,
   clear = true,
+  offsets?: ReadonlyMap<number, MovingCell>,
 ): void {
   if (clear) context.clearRect(0, 0, width, height);
   if (settings.includeBackground) {
@@ -218,15 +190,16 @@ export function renderDitherFrame(
   for (let y = 0; y < field.height; y += 1) {
     for (let x = 0; x < field.width; x += 1) {
       const index = y * field.width + x;
-      if (field.mask[index] === 0) continue;
       const centerX = (x + 0.5) * cellWidth;
       const centerY = (y + 0.5) * cellHeight;
+      if (field.mask[index] === 0) continue;
       const dynamic = getDynamicCell(centerX, centerY, settings);
+      const offset = offsets?.get(index);
       const drawWidth = Math.max(1, cellWidth * 0.82 * dynamic.scale);
       const drawHeight = Math.max(1, cellHeight * 0.82 * dynamic.scale);
       context.fillStyle = `rgb(${dynamic.color[0]} ${dynamic.color[1]} ${dynamic.color[2]})`;
       context.globalAlpha = originalAlpha * dynamic.opacity;
-      context.fillRect(centerX + dynamic.offsetX - drawWidth / 2, centerY + dynamic.offsetY - drawHeight / 2, drawWidth, drawHeight);
+      context.fillRect(centerX + (offset?.x ?? 0) + dynamic.offsetX - drawWidth / 2, centerY + (offset?.y ?? 0) + dynamic.offsetY - drawHeight / 2, drawWidth, drawHeight);
     }
   }
   context.globalAlpha = originalAlpha;

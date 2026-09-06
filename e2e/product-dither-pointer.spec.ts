@@ -5,69 +5,55 @@ import { getToolcraftControlApplicabilityCases, getToolcraftApplicabilityRequire
 import { getToolcraftControlFieldByTarget } from "./browser-control-target-helpers";
 import { expectToolcraftControlApplicabilityState } from "./browser-control-applicability-evidence";
 import { expectToolcraftProductObservableToChange, getToolcraftProductObservableSnapshot } from "./product-observable-helpers";
-import { ditherOutput, prepareDither, seekDitherPhase, setDitherSwitch } from "./product-dither-helpers";
-
-async function hoverField(page: import("@playwright/test").Page) {
-  const box = await page.locator(ditherOutput).boundingBox();
-  if (!box) throw new Error("Missing source output");
-  await page.mouse.move(box.x + box.width * 0.75, box.y + box.height * 0.3);
+import { prepareCellPaint, readCellPaint } from "./product-dither-cell-paint-helpers";
+import { ditherOutput, prepareDither, setDitherSwitch } from "./product-dither-helpers";
+async function hover(page: import("@playwright/test").Page) {
+ const box = await page.locator(ditherOutput).boundingBox(); if (!box) throw Error("Missing output");
+ await page.mouse.move(box.x + box.width * 0.75, box.y + box.height * 0.4);
 }
-
+async function prepare(page: import("@playwright/test").Page) {
+ const session = await prepareDither(page); await prepareCellPaint(page);
+ await page.getByRole("button", { name: "Remove Pin", exact: true }).click();
+ return session;
+}
 test("browser: Pointer response changes dither output", async ({ page }) => {
-  const session = await prepareDither(page);
-  await setDitherSwitch(page, "pointer.enabled", true);
-  await hoverField(page);
-  await expectToolcraftProductObservableToChange(session,
-    session.controlAction("pointer.enabled", async field => { await field.getByRole("switch").focus(); await field.getByRole("switch").press("Space"); }),
-    { requirementId: "pointer.enabled", selector: ditherOutput });
+ const session = await prepare(page);
+ const idle = await getToolcraftProductObservableSnapshot(page, { selector: ditherOutput });
+ const grid = await readCellPaint(page);
+ await expectToolcraftProductObservableToChange(session, session.controlAction("pointer.enabled", async () => {
+   await setDitherSwitch(page, "pointer.enabled", true); await hover(page);
+ }), { requirementId: "pointer.enabled", selector: ditherOutput });
+ const displaced = await readCellPaint(page);
+ expect(displaced.gaps).not.toEqual(grid.gaps);
+ await page.locator(ditherOutput).screenshot({ path: ".toolcraft/browser-artifacts/pointer-displaced.png" });
+ await page.mouse.move(1, 1);
+ expect(await getToolcraftProductObservableSnapshot(page, { selector: ditherOutput })).not.toBe(idle);
+ await expect.poll(() => getToolcraftProductObservableSnapshot(page, { selector: ditherOutput }), { timeout: 15000 }).toBe(idle);
 });
-
-for (const [label, target, requirementId] of [
-  ["Pointer radius", "pointer.radius", "pointer.radius"],
-  ["Pointer strength", "pointer.strength", "pointer.strength"],
-  ["Pointer decay", "pointer.decay", "pointer.decay"],
-  ["Pointer speed", "pointer.speed", "pointer.speed"],
-  ["Pointer softness", "pointer.softness", "pointer.softness"],
-  ["Pointer size", "pointer.size", "pointer.size"],
-] as const) {
-  test(`browser: ${label} changes dither output`, async ({ page }) => {
-    const session = await prepareDither(page);
-    await seekDitherPhase(page);
-    await setDitherSwitch(page, "pointer.enabled", true);
-    let useEnd = false;
-    const mutate = async (id: string) => {
-      const field = await getToolcraftControlFieldByTarget(page, target);
-      if (target === "pointer.decay") await field.getByRole("slider").press("End");
-      // Focus before positioning the mouse: keyboard tuning keeps the visible field active.
-      await field.getByRole("slider").focus();
-      await hoverField(page);
-      await expectToolcraftProductObservableToChange(session,
-        session.controlAction(target, async control => {
-          await control.getByRole("slider").press(useEnd ? "End" : "Home");
-          if (target === "pointer.decay") await page.mouse.move(1, 1);
-        }), { requirementId: id, selector: ditherOutput });
-      useEnd = !useEnd;
-    };
-    await mutate(requirementId);
-    for (const applicabilityCase of getToolcraftControlApplicabilityCases({ schema: appSchema, sectionInventory: appControlSectionInventory, target })) {
-      await expectToolcraftControlApplicabilityState(session,
-        session.controlAction(applicabilityCase.selectorTarget, async () => setDitherSwitch(page, applicabilityCase.selectorTarget, Boolean(applicabilityCase.selectorValue))),
-        applicabilityCase, { baseRequirementId: requirementId });
-      if (applicabilityCase.expectation === "visible") {
-        if (target === "pointer.decay") useEnd = false;
-        await mutate(getToolcraftApplicabilityRequirementId(requirementId, applicabilityCase));
-      }
-    }
-    if (target === "pointer.decay") {
-      await page.mouse.move(1, 1);
-      const idle = await getToolcraftProductObservableSnapshot(page, { selector: ditherOutput });
-      await (await getToolcraftControlFieldByTarget(page, target)).getByRole("slider").press("End");
-      await expect((await getToolcraftControlFieldByTarget(page, target)).getByRole("slider")).toHaveAttribute("aria-valuenow", "0.99");
-      await hoverField(page);
-      await expect.poll(() => getToolcraftProductObservableSnapshot(page, { selector: ditherOutput })).not.toBe(idle);
-      await page.mouse.move(1, 1);
-      await page.evaluate(() => new Promise<void>(resolve => { let frames = 0; const tick = () => ++frames === 10 ? resolve() : requestAnimationFrame(tick); requestAnimationFrame(tick); }));
-      expect(await getToolcraftProductObservableSnapshot(page, { selector: ditherOutput })).not.toBe(idle);
-    }
-  });
-}
+for (const [label, target] of [
+ ["Pointer radius", "pointer.radius"], ["Pointer repel radius", "pointer.repelRadius"], ["Pointer repel force", "pointer.repelForce"],
+ ["Pointer attract force", "pointer.attractForce"], ["Pointer return", "pointer.return"], ["Pointer inertia", "pointer.damping"],
+] as const) test("browser: " + label + " changes dither output", async ({ page }) => {
+ const session = await prepare(page);
+ const mutate = async (id: string) => {
+  await page.mouse.move(1, 1);
+  await setDitherSwitch(page, "pointer.enabled", false);
+  await setDitherSwitch(page, "pointer.enabled", true);
+  // Expose an actual attraction annulus for that control's outcome.
+  if (target === "pointer.attractForce") {
+   await (await getToolcraftControlFieldByTarget(page, "pointer.repelRadius")).getByRole("slider").press("Home");
+  }
+  const slider = (await getToolcraftControlFieldByTarget(page, target)).getByRole("slider");
+  await slider.press(target === "pointer.radius" ? "End" : "Home");
+  await slider.focus();
+  await expectToolcraftProductObservableToChange(session, session.controlAction(target, async () => {
+   await slider.press(target === "pointer.radius" ? "Home" : "End"); await hover(page);
+  }), { requirementId: id, selector: ditherOutput });
+  await page.mouse.move(1, 1); await setDitherSwitch(page, "pointer.enabled", false);
+ };
+ await mutate(target);
+ for (const c of getToolcraftControlApplicabilityCases({ schema: appSchema, sectionInventory: appControlSectionInventory, target })) {
+  await expectToolcraftControlApplicabilityState(session, session.controlAction(c.selectorTarget, async () => setDitherSwitch(page, c.selectorTarget, Boolean(c.selectorValue))), c, { baseRequirementId: target });
+  if (c.expectation === "visible") await mutate(getToolcraftApplicabilityRequirementId(target, c));
+ }
+});

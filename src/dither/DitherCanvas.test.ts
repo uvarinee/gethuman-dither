@@ -3,12 +3,10 @@ import { describe, expect, it } from "vitest";
 import { parsePins } from "./DitherCanvas";
 
 const pin = (x: number, y: number) => [{
-  bloom: 48,
+  radius: 100,
   color: "#FF4F2E",
-  core: 12,
-  intensity: 0.9,
+  coverage: 0.55, noise: 0.85, speed: 1, softness: 0.25, scatter: 0.2,
   position: { x: String(x), y: String(y) },
-  pulse: "double",
 }];
 
 describe("DitherCanvas pin projection", () => {
@@ -26,7 +24,6 @@ describe("DitherCanvas pin projection", () => {
     const twoX = parsePins(pin(0.5, -0.5), 400, 200, 2)[0]!;
     expect(twoX.position.x / 2).toBe(oneX.position.x);
     expect(twoX.position.y / 2).toBe(oneX.position.y);
-    expect(twoX.core / 2).toBe(oneX.core);
-    expect(twoX.bloom / 2).toBe(oneX.bloom);
+    expect(twoX.radius / 2).toBe(oneX.radius);
   });
 });
