@@ -277,6 +277,26 @@ export const appAcceptance: readonly ToolcraftComponentAcceptance[] = [
     target: "pins.items",
     userAction: "Drag the pin handle across the image.",
   },
+{
+  "actionCoverage": [
+    "export.config"
+  ],
+  "automated": true,
+  "automatedTestName": "exports original source bytes and portable settings without mutating the studio",
+  "browser": {
+    "budget": "extended-io",
+    "file": "e2e/product-export-config.spec.ts",
+    "testName": "browser: Export Config reproduces the studio in an independent browser page"
+  },
+  "componentType": "panelActions",
+  "evidence": "exported-bytes",
+  "expectedObservable": "ZIP contains original image, portable settings and independently running effect with matching studio pixels and pointer response.",
+  "fixture": "Authored image, pins, pointer and paused timeline",
+  "id": "export.config",
+  "kind": "control",
+  "target": "actions.output",
+  "userAction": "Download Export Config and run the extracted demo."
+},
   {
     actionCoverage: ["export.png", "export.video"],
     automated: true,

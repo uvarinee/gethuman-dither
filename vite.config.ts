@@ -1,3 +1,4 @@
+import { ditherEffectPlugin } from "./scripts/dither-effect-plugin.mjs";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import fs from "node:fs/promises";
@@ -64,6 +65,7 @@ function toolcraftServerIdentityPlugin(): Plugin {
 
 export default defineConfig(async () => ({
   plugins: [
+    ditherEffectPlugin(),
     ...(await loadToolcraftRendererVitePlugins({ appRoot: rootDir })),
     toolcraftServerIdentityPlugin(),
     tailwindcss(),

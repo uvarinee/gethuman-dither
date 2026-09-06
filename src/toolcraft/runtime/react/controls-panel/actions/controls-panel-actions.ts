@@ -1,3 +1,4 @@
+import { downloadToolcraftArchive, type ToolcraftArchiveRequest } from "../../../export/archive-export";
 "use client";
 
 import * as React from "react";
@@ -33,6 +34,7 @@ export type ToolcraftPanelActionFeedback = Readonly<{
 }>;
 
 export type ToolcraftPanelActionContext = {
+  downloadArchive: (request: ToolcraftArchiveRequest) => Promise<void>;
   action: ToolcraftActionSchema;
   dispatch: React.Dispatch<ToolcraftCommand>;
   reportProgress: (progress: number) => void;
@@ -240,6 +242,7 @@ export function useControlsPanelActions({
       result =
         exportResult ??
         onPanelAction?.({
+          downloadArchive: (request) => downloadToolcraftArchive(request, reportProgress),
           action,
           dispatch,
           reportFeedback,

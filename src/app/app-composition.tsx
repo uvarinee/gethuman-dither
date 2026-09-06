@@ -1,3 +1,4 @@
+import { exportConfig } from "../export-config/archive";
 import type { ToolcraftAppComposition } from "@/toolcraft/runtime/react";
 
 import { appSchema } from "./app-schema";
@@ -7,6 +8,7 @@ import { ditherExportRenderer } from "@/dither/dither-export";
 import { getDitherSceneBounds } from "@/dither/dither-scene";
 
 export const appComposition: ToolcraftAppComposition = {
+  onPanelAction: exportConfig,
   modelPresentation: { mode: "runtime" },
   schema: appSchema,
   canvasContent: <DitherCanvas />,

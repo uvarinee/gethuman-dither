@@ -1,0 +1,37 @@
+{
+  "kind": "user-maintained-local-fork",
+  "version": 1,
+  "authority": "User explicitly approved exact local-fork integrity policy on 2026-09-06",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "upstreamSha256": "39c3e993b1fe18b4bc4b5c865db5aa3dacdeda50182e5803afa158e35816bb65",
+      "sha256": "01e3a397aa817977b2fd81e23d9288d12a32809df1c63c373b35c4fe165e8974"
+    },
+    {
+      "path": "vite.config.ts",
+      "upstreamSha256": "a0fc31bac4a62e12d0815da330e7df3e58a42bb785ab48c2b1f054c718e493c6",
+      "sha256": "f1d4b7e63682e34c243fce6aef137f1473d698198284a180c9482e4bda45f86d"
+    },
+    {
+      "path": "scripts/check-toolcraft-integrity.mjs",
+      "upstreamSha256": "60b1e80dc18bbc994bf4cf91e20f2d71d0fb8df59690a81fb87b13ada0029749",
+      "sha256": "df91a083d6497e2d694c086a5eef3453021fbfa35c9dce3485fafe31ffdc5c47"
+    },
+    {
+      "path": "src/toolcraft/runtime/export/artifact-download.ts",
+      "upstreamSha256": "a6b893286c72fefe80e2c656c390c4dddbfebe2f0992f3eee969c88d3be31639",
+      "sha256": "b9ab06263f9daa1be8998b28520300632e2e771e28a94caf95f5f7c4c373b123"
+    },
+    {
+      "path": "src/toolcraft/runtime/export/archive-export.ts",
+      "upstreamSha256": null,
+      "sha256": "4fe5fe34313de958d069ab499cfd087e55cb7adba1a75e2cafa51c7facbf55a3"
+    },
+    {
+      "path": "src/toolcraft/runtime/react/controls-panel/actions/controls-panel-actions.ts",
+      "upstreamSha256": "6386df44b50ba06e408c9535447530d27e4aa3dae9eccc8a6df4519bc72aba9d",
+      "sha256": "e653e75bf91d0ad62adcd581597b02a6f2b1d7abbceef211ddfcf698e84c014e"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import {
 } from "./export-error";
 
 export type ToolcraftArtifactFileExtension =
+  | ".zip"
   | ".jpg"
   | ".mp4"
   | ".png"

@@ -1,0 +1,18 @@
+{
+  "commit": "a6b48bf",
+  "files": {
+    "src/dither/dither-renderer.ts": "827e66c988fb32972d5ddd72ebf49282b98d8fdac4824d39ff9b9ece1751f1e1",
+    "src/dither/dither-algorithms.ts": "47126c26f3770283bebbb8589f4f5f493fc13948b358097baf7732fb78f8c39f",
+    "src/dither/dither-flicker.ts": "1158f12505c506cc93ee0bbe733c8352ea39445c2ab75261c2df87b06a3873e8",
+    "src/dither/pointer-physics.ts": "4e4db87a0d0df00508cddd592f59f17287c7a2565e0d6b260747b85e1288f7e3",
+    "src/dither/pin-animation.ts": "9732283b76b4f07bdf0c6740299e469989105f8fd4cc4aa18bf91d257eeb0ded",
+    "src/dither/interaction-controls.ts": "da8160c216537bd2a2221a96f46d4b32b3615cdccca42f27fab579d13805eae6",
+    "src/dither/DitherCanvas.tsx": "3d6ec97e65c1ead0bfb86bf6090eba89e6d7a0627743cc6e05fe664f9f63d257",
+    "src/dither/DitherCanvas.module.css": "fb82d64ac9c22e6a2a22122eea29648d30a4c7d8fc5db7dc73e017aff214bc19",
+    "src/dither/DitherPinHandles.tsx": "f4b9119a5181dcdc76bea6aa0662c43470114487f6975541053a30f4293b09af",
+    "src/dither/dither-preview-hooks.ts": "36cdcc07aac60c6308e8bd55fc1bf2fb0801f2dde7f1a6359b36c9e55793a2fe",
+    "src/dither/dither-export.ts": "6a5593021c0d78bcf2409a559bcde758d95e1800ce424b58fb09aa319807b69b",
+    "src/dither/dither-limits.ts": "2a610a8a6fefc25f76b256e0592128ad9b137efe3c07d1439909f27c659aa0b5"
+  },
+  "portableSettingsSha256": "2a81a3ea19a12e99afd9aac81be09cd53f9b23a5383595a25a9c089f61faa625"
+}
