@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import crypto from "node:crypto";
+import { applyLocalToolcraftFork } from "./local-toolcraft-fork.mjs";
 import { realpathSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -128,6 +129,8 @@ async function collectIntegrityFailures({ platformOnly, rootDir }) {
     resolvedExpectedFiles,
     resolvedProtectedFiles,
   } = manifestValidation;
+
+  await applyLocalToolcraftFork(rootDir, resolvedExpectedFiles, resolvedProtectedFiles);
 
   const toolcraftInventory = await collectToolcraftInventory(toolcraftRoot);
   const actualFiles = toolcraftInventory.files;

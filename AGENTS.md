@@ -1,3 +1,7 @@
+# Local fork authorization — 2026-09-06
+
+The user explicitly approved the local Toolcraft ZIP export extension and its exact integrity-policy change. The generated no-runtime-edit rule is superseded only for the files in docs/local-toolcraft-fork.md and its exact hash overlay. Preserve the signed upstream manifest, license, existing renderer, Pointer/Pins behavior and useful tests. This is not an upstream-certified release. Do not change styling or unrelated framework code.
+
 # Toolcraft App Template Assembly Guide
 
 <!-- toolcraft-performance-lifecycle: first-delivery=functional-complete; later-edits=focused-only; complaint=one-authority-targeted-performance-iteration; full-audit=explicit-only -->

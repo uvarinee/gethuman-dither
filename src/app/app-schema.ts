@@ -340,6 +340,7 @@ export const appSchema = defineToolcraft({
                   role: "export-video",
                   value: "export.video",
                 },
+                { icon: "upload-simple", label: "Export Config", role: "download-output", value: "export.config" },
               ],
               target: "actions.output",
               type: "panelActions",

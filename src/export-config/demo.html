@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interactive Dither — exported effect</title>
+<style>
+body{margin:0;padding:24px;background:#181818;color:#eee;font:14px system-ui}
+main{max-width:960px;margin:auto}
+#effect{width:100%}
+nav{display:flex;gap:12px;margin:16px 0}
+button{font:inherit;padding:8px 16px;cursor:pointer}
+#error{color:#ffaaa0}
+</style>
+<main>
+  <div id="effect"></div>
+  <nav><button id="play">Play</button><button id="pause">Pause</button><button id="restart">Restart</button></nav>
+  <p id="error" role="alert"></p>
+</main>
+<script type="module">
+const bundle = __DITHER_BUNDLE__;
+const message = document.querySelector("#error");
+document.querySelector("#effect").addEventListener("dither-error", event => { message.textContent = event.detail.message; });
+try {
+  const { createDitherEffect } = await import(bundle.moduleUrl);
+  const settings = bundle.settings;
+  const effect = await createDitherEffect({
+    container: document.querySelector("#effect"),
+    imageUrl: bundle.imageUrl,
+    settings,
+  });
+  document.querySelector("#play").onclick = () => effect.play();
+  document.querySelector("#pause").onclick = () => effect.pause();
+  document.querySelector("#restart").onclick = () => { effect.seek(0); effect.play(); };
+  window.addEventListener("pagehide", () => effect.destroy(), {once:true});
+} catch (error) {
+  message.textContent = "Could not start the preview: " + error.message;
+}
+</script>
+</html>
